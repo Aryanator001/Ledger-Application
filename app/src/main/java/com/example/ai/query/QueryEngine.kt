@@ -42,37 +42,67 @@ class QueryEngine(
         val timeToken = inferTimeToken(parsedQuery)
         val isBalanceQuery = parsedQuery.entity != null && parsedQuery.direction == null
 
-        // 1. Try cache first
-        val cached = analyticsRepository.tryGet(parsedQuery, timeToken)
+        // 1. CACHE LOOKUP — safely. A cache failure must never break the query.
+        val cached = try {
+            analyticsRepository.tryGet(parsedQuery, timeToken)
+        } catch (e: Exception) {
+            android.util.Log.e("QueryEngine", "Cache tryGet failed for $timeToken, falling through to Room", e)
+            null
+        }
 
-        val aggregate = if (cached != null) {
+        // 2. ANTI-POISONING — trust cache only when it has positive data.
+        //    A cached count == 0 is treated as a miss because it was likely
+        //    written before any real transactions existed (B2 root cause).
+        val aggregate = if (cached != null && cached.count > 0) {
+            android.util.Log.d("QueryEngine", "Cache HIT for ${parsedQuery.entity}/$timeToken: ${cached.count} txs")
             cached
         } else {
-            // 2. Cache miss — direct Room aggregation
-            val computed = if (isBalanceQuery) {
-                transactionRepository.getEntityNetBalance(
-                    entity = parsedQuery.entity!!,
-                    startMs = parsedQuery.timeRangeStart ?: 0L,
-                    endMs = parsedQuery.timeRangeEnd ?: Long.MAX_VALUE
-                )
-            } else {
-                transactionRepository.getQueryAggregate(
-                    entity = parsedQuery.entity,
-                    categoryId = parsedQuery.categoryHint,
-                    direction = parsedQuery.direction?.toRoomTypeString(),
-                    startMs = parsedQuery.timeRangeStart ?: 0L,
-                    endMs = parsedQuery.timeRangeEnd ?: Long.MAX_VALUE
-                )
+            if (cached != null && cached.count == 0) {
+                android.util.Log.w("QueryEngine", "Ignoring poisoned cache row (count=0), falling through to Room")
             }
-            // 3. Populate cache for next time (skips uncacheable keys silently)
-            analyticsRepository.put(parsedQuery, timeToken, computed)
+            // 3. ROOM AGGREGATION — the canonical source of truth.
+            val computed = try {
+                if (isBalanceQuery) {
+                    transactionRepository.getEntityNetBalance(
+                        entity = parsedQuery.entity!!,
+                        startMs = parsedQuery.timeRangeStart ?: 0L,
+                        endMs = parsedQuery.timeRangeEnd ?: Long.MAX_VALUE
+                    )
+                } else {
+                    transactionRepository.getQueryAggregate(
+                        entity = parsedQuery.entity,
+                        categoryId = parsedQuery.categoryHint,
+                        direction = parsedQuery.direction?.toRoomTypeString(),
+                        startMs = parsedQuery.timeRangeStart ?: 0L,
+                        endMs = parsedQuery.timeRangeEnd ?: Long.MAX_VALUE
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("QueryEngine", "Room aggregation failed", e)
+                return QueryResult.Failure(FailureReason.QueryEngineError())
+            }
+
+            // 4. WRITE-THROUGH — only cache positive results. Never poison.
+            if (computed.count > 0) {
+                try {
+                    analyticsRepository.put(parsedQuery, timeToken, computed)
+                } catch (e: Exception) {
+                    android.util.Log.e("QueryEngine", "Cache put failed (non-fatal)", e)
+                }
+            }
             computed
         }
 
-        // 4. Zero-result fuzzy correction (unchanged from Stage 1)
+        // 5. FUZZY CORRECTION — wrapped so a fuzzy bug can't crash the query.
         if (aggregate.count == 0 && parsedQuery.entity != null && fuzzyAttempts < maxFuzzyRecursion) {
-            val correction = fuzzyEntityMatcher.suggest(parsedQuery.entity)
+            val correction = try {
+                fuzzyEntityMatcher.suggest(parsedQuery.entity)
+            } catch (e: Exception) {
+                android.util.Log.e("QueryEngine", "Fuzzy matcher threw", e)
+                null
+            }
             if (correction != null && !correction.equals(parsedQuery.entity, ignoreCase = true)) {
+                android.util.Log.d("QueryEngine", "Fuzzy: '${parsedQuery.entity}' → '$correction'")
                 return processInternal(
                     parsedQuery = parsedQuery.copy(entity = correction),
                     originalTranscript = originalTranscript,
@@ -85,19 +115,32 @@ class QueryEngine(
             return QueryResult.Failure(FailureReason.NoResultsFound(parsedQuery))
         }
 
+        // 6. HEADLINE — Gemini primary, template fallback. Both wrapped.
         val timeLabel = timeTokenResolver.label(timeToken)
-        val headline = geminiSynthesizer.synthesize(
-            transcript = originalTranscript,
-            query = parsedQuery,
-            totalAmount = aggregate.totalAmount,
-            transactionCount = aggregate.count,
-            timeLabel = timeLabel
-        ) ?: fallbackFormatter.format(
-            query = parsedQuery,
-            timeToken = timeToken,
-            totalAmount = aggregate.totalAmount,
-            transactionCount = aggregate.count
-        )
+        val geminiHeadline = try {
+            geminiSynthesizer.synthesize(
+                transcript = originalTranscript,
+                query = parsedQuery,
+                totalAmount = aggregate.totalAmount,
+                transactionCount = aggregate.count,
+                timeLabel = timeLabel
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("QueryEngine", "Gemini synthesizer threw, using template", e)
+            null
+        }
+
+        val headline = geminiHeadline ?: try {
+            fallbackFormatter.format(
+                query = parsedQuery,
+                timeToken = timeToken,
+                totalAmount = aggregate.totalAmount,
+                transactionCount = aggregate.count
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("QueryEngine", "Template formatter also failed", e)
+            "Result: ${aggregate.count} transaction(s)"
+        }
 
         return QueryResult.Success(
             QueryResponse(

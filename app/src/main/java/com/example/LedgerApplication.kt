@@ -4,6 +4,8 @@ import android.app.Application
 import com.example.analytics.AnalyticsCacheUpdater
 import com.example.analytics.AnalyticsKeyResolver
 import com.example.analytics.AnalyticsRepository
+import com.example.analytics.CacheRecoveryManager
+import com.example.analytics.CategoryMigrationManager
 import com.example.ai.query.TimeTokenResolver
 import com.example.data.AppDatabase
 import com.example.data.TransactionRepository
@@ -32,6 +34,10 @@ class LedgerApplication : Application() {
     val analyticsKeyResolver by lazy { AnalyticsKeyResolver(timeTokenResolver) }
     val analyticsCacheUpdater by lazy { AnalyticsCacheUpdater(analyticsCacheDao, analyticsKeyResolver) }
     val analyticsRepository by lazy { AnalyticsRepository(analyticsCacheDao, analyticsKeyResolver, timeTokenResolver) }
+    val cacheRecoveryManager by lazy { CacheRecoveryManager(this, analyticsCacheDao) }
+    val categoryMigrationManager by lazy {
+        CategoryMigrationManager(this, repository)
+    }
 
     val repository by lazy { 
         TransactionRepository(
@@ -49,6 +55,8 @@ class LedgerApplication : Application() {
         super.onCreate()
         seedDefaultCategoriesIfNeeded()
         AppLockManager.init(this, securityRepository)
+        cacheRecoveryManager.runIfNeeded()
+        categoryMigrationManager.runIfNeeded()
     }
 
     private fun seedDefaultCategoriesIfNeeded() {
@@ -73,7 +81,13 @@ class LedgerApplication : Application() {
                         Category(id = "inc_business", name = "Business", icon = "store", colorHex = "#FFEB3B", type = "INCOME", isSystem = true, order = 12),
                         Category(id = "inc_invest", name = "Investment", icon = "trending_up", colorHex = "#2196F3", type = "INCOME", isSystem = true, order = 13),
                         Category(id = "inc_gift", name = "Gift", icon = "card_giftcard", colorHex = "#9C27B0", type = "INCOME", isSystem = true, order = 14),
-                        Category(id = "inc_other", name = "Other Income", icon = "more_horiz", colorHex = "#607D8B", type = "INCOME", isSystem = true, order = 15)
+                        Category(id = "inc_other", name = "Other Income", icon = "more_horiz", colorHex = "#607D8B", type = "INCOME", isSystem = true, order = 15),
+                        
+                        // AI-aligned system categories (Phase 6+ extraction layer targets these IDs)
+                        Category(id = "general", name = "General", icon = "category", colorHex = "#9E9E9E", type = "EXPENSE", isSystem = true, order = 200),
+                        Category(id = "food", name = "Food", icon = "restaurant", colorHex = "#FF5722", type = "EXPENSE", isSystem = true, order = 201),
+                        Category(id = "rent", name = "Rent", icon = "home", colorHex = "#FF9800", type = "EXPENSE", isSystem = true, order = 202),
+                        Category(id = "shopping", name = "Shopping", icon = "shopping_bag", colorHex = "#E91E63", type = "EXPENSE", isSystem = true, order = 203)
                     )
                     
                     for (category in defaultCategories) {

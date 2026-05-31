@@ -67,6 +67,24 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_8 = object : Migration(6, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Stage 2 introduced the analytics_cache table at version 8.
+                // This migration creates it cleanly without dropping user data.
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `analytics_cache` (
+                        `key` TEXT NOT NULL PRIMARY KEY,
+                        `total_amount` REAL NOT NULL,
+                        `count` INTEGER NOT NULL,
+                        `transaction_ids` TEXT NOT NULL,
+                        `bucket_start_ms` INTEGER NOT NULL,
+                        `bucket_end_ms` INTEGER NOT NULL,
+                        `last_updated` INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -74,7 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ledger_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance
