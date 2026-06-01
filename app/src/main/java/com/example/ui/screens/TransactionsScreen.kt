@@ -414,7 +414,19 @@ fun TransactionsScreen(
                                             modifier = Modifier.size(40.dp).clip(CircleShape).background(cCol.copy(alpha=0.2f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(cat?.icon ?: "💰", fontSize = 20.sp)
+                                            val rawIcon = cat?.icon ?: "💰"
+                                            val displayIcon = if (rawIcon.any { it.isSurrogate() || it.code > 127 }) {
+                                                rawIcon
+                                            } else {
+                                                when (rawIcon.lowercase()) {
+                                                    "restaurant" -> "🍔"
+                                                    "receipt_long" -> "🧾"
+                                                    "shopping_bag" -> "🛍️"
+                                                    "more_horiz" -> "⚙️"
+                                                    else -> rawIcon.take(1)
+                                                }
+                                            }
+                                            Text(displayIcon, fontSize = 20.sp)
                                         }
                                         Spacer(modifier = Modifier.width(12.dp))
 
@@ -569,7 +581,19 @@ fun TransactionsScreen(
                                                     modifier = Modifier.size(40.dp).clip(CircleShape).background(cCol.copy(alpha=0.14f)),
                                                     contentAlignment = Alignment.Center
                                                 ) {
-                                                    Text(cat?.icon ?: "💰", fontSize = 20.sp, modifier = Modifier.alpha(0.7f))
+                                                    val rawIcon = cat?.icon ?: "💰"
+                                                    val displayIcon = if (rawIcon.any { it.isSurrogate() || it.code > 127 }) {
+                                                        rawIcon
+                                                    } else {
+                                                        when (rawIcon.lowercase()) {
+                                                            "restaurant" -> "🍔"
+                                                            "receipt_long" -> "🧾"
+                                                            "shopping_bag" -> "🛍️"
+                                                            "more_horiz" -> "⚙️"
+                                                            else -> rawIcon.take(1)
+                                                        }
+                                                    }
+                                                    Text(displayIcon, fontSize = 20.sp, modifier = Modifier.alpha(0.7f))
                                                 }
                                                 Spacer(modifier = Modifier.width(12.dp))
 
