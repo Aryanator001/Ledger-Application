@@ -171,6 +171,7 @@ fun HomeDashboard(
                         sttProvider.start(sttCallbacks)
                     } else {
                         aiViewModel.onSttError(FailureReason.SttPermissionDenied)
+                        android.widget.Toast.makeText(context, "Microphone permission required for voice input", android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
             } else {

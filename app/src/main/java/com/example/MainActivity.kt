@@ -1,5 +1,9 @@
 package com.example
 
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -90,13 +94,32 @@ val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Settings)
 
 class MainActivity : FragmentActivity() {
     private lateinit var securityViewModel: SecurityViewModel
+    private var isThemeLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { !isThemeLoaded }
         enableEdgeToEdge()
         
         val app = application as LedgerApplication
+
+        lifecycleScope.launch {
+            val hasOnboarded = app.userPreferences.hasCompletedOnboarding.first()
+            if (!hasOnboarded) {
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    // FragmentActivity only permits request codes in the lower 16 bits, so we
+                    // request directly with a fixed code instead of the ActivityResult registry
+                    // (which generates 32-bit codes and crashes here).
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.RECORD_AUDIO),
+                        REQUEST_CODE_RECORD_AUDIO
+                    )
+                }
+            }
+        }
         
         val securityFactory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -125,8 +148,11 @@ class MainActivity : FragmentActivity() {
 
         val initialThemeMode = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                app.userPreferences.theme.first()
+                val mode = app.userPreferences.theme.first()
+                isThemeLoaded = true
+                mode
             } catch (e: Exception) {
+                isThemeLoaded = true
                 "System"
             }
         }
@@ -188,6 +214,10 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_RECORD_AUDIO = 1001
     }
 }
 

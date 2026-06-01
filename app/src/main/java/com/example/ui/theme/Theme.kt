@@ -3,7 +3,9 @@ package com.example.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -34,9 +36,14 @@ fun MyApplicationTheme(
     }
 
     CompositionLocalProvider(LocalAppColors provides colors) {
-        MaterialTheme(
-            content = content
-        )
+        Surface(
+            color = colors.bgBase,
+            modifier = androidx.compose.ui.Modifier.fillMaxSize()
+        ) {
+            MaterialTheme(
+                content = content
+            )
+        }
     }
 }
 

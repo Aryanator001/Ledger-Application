@@ -7,7 +7,7 @@ sealed class FailureReason {
         override val userMessage = "Could not hear you properly"
     }
     object SttPermissionDenied : FailureReason() {
-        override val userMessage = "Microphone permission needed"
+        override val userMessage = "Microphone permission needed. Please enable it in Settings."
     }
     object EmptyTranscript : FailureReason() {
         override val userMessage = "No voice heard"
