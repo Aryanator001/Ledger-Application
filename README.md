@@ -1,22 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
-
-# 📊 Ledger Application
+ Ledger Application
 
 A smart, AI-powered accounting and expense tracking application built for the modern Indian user. It simplifies financial management by allowing users to record transactions using natural speech in English, Hindi, and Hinglish.
 
-## 🚀 Key Features
+#Key Features
 
-*   **🎙️ Voice-to-Transaction:** Add expenses or income by simply speaking. Supports multilingual input (English, Hindi, Hinglish).
-*   **🤖 AI Extraction:** Powered by **Google Gemini 1.5 Flash** to precisely extract amounts, categories, entities, and notes from raw audio transcripts.
-*   **🔍 Natural Language Queries:** Ask questions like *"Total kharch kitna hua?"* or *"How much did I spend on food this month?"* and get instant answers.
-*   **🔒 Privacy & Security:** Built-in Biometric authentication, App Lock, and screenshot protection (`FLAG_SECURE`).
-*   **📈 Smart Analytics:** Real-time financial insights with a high-performance analytics caching layer.
-*   **📂 Multi-Category Support:** Automatic categorization (Food, Rent, Shopping, etc.) with custom manual entry options.
+* 🎙️ Voice-to-Transaction:** Add expenses or income by simply speaking. Supports multilingual input (English, Hindi, Hinglish).
+* 🤖 AI Extraction:** Powered by **Google Gemini 1.5 Flash** to precisely extract amounts, categories, entities, and notes from raw audio transcripts.
+* 🔍 Natural Language Queries:** Ask questions like *"Total kharch kitna hua?"* or *"How much did I spend on food this month?"* and get instant answers.
+* 🔒 Privacy & Security:** Built-in Biometric authentication, App Lock, and screenshot protection (`FLAG_SECURE`).
+* 📈 Smart Analytics:** Real-time financial insights with a high-performance analytics caching layer.
+* 📂 Multi-Category Support:** Automatic categorization (Food, Rent, Shopping, etc.) with custom manual entry options.
 *   **📱 Modern UI:** Fully built with Jetpack Compose following Material 3 design principles.
 
-## 🛠️ Tech Stack
+#Tech Stack
 
 *   **Language:** Kotlin
 *   **UI Framework:** Jetpack Compose
@@ -27,7 +23,7 @@ A smart, AI-powered accounting and expense tracking application built for the mo
 *   **Networking:** OkHttp
 *   **Architecture:** MVVM (Model-View-ViewModel)
 
-## 🏗️ Architecture Overview
+#Architecture Overview
 
 The app follows a clean, layered architecture:
 *   **`com.example.data`**: Core data layer handling Room entities, DAOs, and Repositories.
@@ -36,13 +32,13 @@ The app follows a clean, layered architecture:
 *   **`com.example.ui`**: UI components and Compose screens.
 *   **`com.example.security`**: App-wide lock management and biometric integration.
 
-## 🏁 Getting Started
+#Getting Started
 
 ### Prerequisites
 *   [Android Studio Ladybug](https://developer.android.com/studio) or newer.
 *   A Gemini API Key from [Google AI Studio](https://aistudio.google.com/).
 
-### Setup Instructions
+#Setup Instructions
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/your-username/Ledger-Application.git
@@ -55,7 +51,7 @@ The app follows a clean, layered architecture:
 4.  **Run:**
     *   Sync Gradle and run the app on a physical device or emulator with Google Play Services.
 
-## 🧪 Testing
+# Testing
 
 The project includes a robust testing suite:
 *   **Unit Tests:** Run with `./gradlew testDebugUnitTest` (Robolectric).
