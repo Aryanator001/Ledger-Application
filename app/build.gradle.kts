@@ -30,7 +30,8 @@ android {
       keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
+      // Points directly to the default keystore generated on your Arch Linux machine
+      storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -70,6 +71,7 @@ secrets {
 // This makes it easy to add them back in the future if needed.
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+  implementation("androidx.core:core-splashscreen:1.0.1")
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
