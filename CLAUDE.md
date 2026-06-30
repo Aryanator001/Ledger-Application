@@ -76,14 +76,26 @@ SttProvider (Android native STT)
 
 ### Data Layer
 
-Room database (`ledger_database`, v8). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`. All migrations live in `AppDatabase`. `fallbackToDestructiveMigration` is enabled as a last resort.
+Room database (`ledger_database`, v8). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`. All migrations live in `AppDatabase`. `fallbackToDestructiveMigration` is enabled as a last resort. `Budget` tracks per-category spending limits; `BudgetRepository` is wired on `LedgerApplication`.
 
 `TransactionRepository` is the single write path for transactions; it hooks `AnalyticsCacheUpdater` on each mutation.
+
+### Analytics Tab
+
+`AnalyticsViewModel` drives the Analytics screen. It surfaces:
+- **Business health** (`BusinessHealthData`) — income vs expense net, computed via `AnalyticsService`
+- **Outstanding balances** — receivables/payables derived from tagged transactions
+- **Trend chart** — `TrendPoint` list, switchable between daily/weekly/monthly granularity
+- **Category breakdown** — expandable rows with per-category transaction drill-down
+- **AI insights** — `GeminiInsightsService` calls Gemini Flash with a transaction summary to generate a natural-language insight string; state is `AiInsightState` (Idle / Loading / Ready / Error)
+- **Report export** — `ReportExporter` builds CSV or PDF share intents
+
+`AnalyticsService` (`com.example.data`) is a pure computation layer that aggregates over `TransactionRepository`, `AccountRepository`, and `BudgetRepository` — it does not write to the DB.
 
 ### Navigation
 
 Two patterns coexist in `MainActivity`:
-- **String routes** — legacy `Route` sealed class (most screens: Home, Transactions, Settings, AccountDetail, etc.)
+- **String routes** — legacy `Route` sealed class. Bottom nav: `Home`, `Transactions`, `Analytics`, `Settings`. Deep routes: `AccountDetail`, `GeneralSettings`, `SecuritySettings`, etc.
 - **Type-safe routes** — `@Serializable` objects in `AppRoutes.kt` (currently `FilteredLedger`); use `navController.navigate(FilteredLedger(...))` and `backStackEntry.toRoute<FilteredLedger>()`.
 
 New destinations should prefer the type-safe pattern.
