@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -365,7 +366,7 @@ fun MainScreen(
                     )
                 }
                 composable(Route.SecuritySettings.route) {
-                    val activity = LocalContext.current as FragmentActivity
+                    val activity = LocalActivity.current as FragmentActivity
                     SecuritySettingsScreen(
                         viewModel = securityViewModel,
                         activity = activity,
