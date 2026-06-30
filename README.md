@@ -1,4 +1,4 @@
- Ledger Application
+/c Ledger Application
 
 A smart, AI-powered accounting and expense tracking application built for the modern Indian user. It simplifies financial management by allowing users to record transactions using natural speech in English, Hindi, and Hinglish.
 

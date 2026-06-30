@@ -149,4 +149,10 @@ class TransactionRepository(
     }
 
     suspend fun getDistinctTitles(): List<String> = transactionDao.getDistinctTitles()
+
+    suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long) =
+        transactionDao.getIncomeExpenseTotalsForRange(startMs, endMs)
+
+    suspend fun getAllTransactionsOnce(): List<Transaction> =
+        transactionDao.getAllTransactionsOnce()
 }

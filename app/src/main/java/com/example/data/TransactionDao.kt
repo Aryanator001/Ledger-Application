@@ -154,7 +154,24 @@ interface TransactionDao {
     ): EntityBalanceRow?
     @Query("SELECT DISTINCT title FROM transactions WHERE title != '' ORDER BY title")
     suspend fun getDistinctTitles(): List<String>
+
+    @Query("""
+        SELECT
+            SUM(CASE WHEN type IN ('INCOME', 'CREDIT') THEN amount ELSE 0 END) AS incomeTotal,
+            SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) AS expenseTotal
+        FROM transactions
+        WHERE date >= :startMs AND date <= :endMs
+    """)
+    suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long): IncomeExpenseTotalsRow?
+
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    suspend fun getAllTransactionsOnce(): List<Transaction>
 }
+
+data class IncomeExpenseTotalsRow(
+    val incomeTotal: Double?,
+    val expenseTotal: Double?
+)
 
 data class AmountIdRow(
     val amount: Double,

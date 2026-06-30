@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
@@ -41,9 +42,13 @@ import com.example.ui.viewmodel.LedgerViewModelFactory
 import com.example.ui.screens.HomeDashboard
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.GeneralSettingsScreen
 import com.example.ui.screens.AccountListScreen
 import com.example.ui.screens.AccountDetailScreen
+import com.example.ui.analytics.AnalyticsViewModel
+import com.example.ui.analytics.AnalyticsViewModelFactory
+import com.example.ui.analytics.GeminiInsightsService
 import com.example.ui.viewmodel.SettingsViewModel
 import com.example.ui.viewmodel.SettingsViewModelFactory
 import com.example.ai.AiTransactionViewModel
@@ -75,6 +80,7 @@ import kotlinx.coroutines.flow.first
 sealed class Route(val route: String, val title: String, val icon: ImageVector) {
     object Home : Route("home", "Dashboard", Icons.Default.Home)
     object Transactions : Route("transactions", "Transactions", Icons.AutoMirrored.Filled.List)
+    object Analytics : Route("analytics", "Analytics", Icons.Default.BarChart)
     object Settings : Route("settings", "Settings", Icons.Default.Settings)
     object GeneralSettings : Route("general_settings", "General", Icons.Default.Settings)
     object SecuritySettings : Route("security_settings", "Security", Icons.Default.Settings)
@@ -90,7 +96,7 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
     }
 }
 
-val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Settings)
+val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
 
 class MainActivity : FragmentActivity() {
     private lateinit var securityViewModel: SecurityViewModel
@@ -169,6 +175,9 @@ class MainActivity : FragmentActivity() {
             val aiFactory = AiTransactionViewModelFactory(app.repository, app.accountRepository, intentClassifier, transactionExtractor, app.analyticsRepository)
             val aiViewModel: AiTransactionViewModel = viewModel(factory = aiFactory)
 
+            val analyticsFactory = AnalyticsViewModelFactory(app.repository, app.analyticsService, GeminiInsightsService())
+            val analyticsViewModel: AnalyticsViewModel = viewModel(factory = analyticsFactory)
+
             val sttProvider: SttProvider = AndroidNativeSttProvider(this)
 
             val isLocked by com.example.data.security.AppLockManager.isLocked.collectAsStateWithLifecycle()
@@ -190,10 +199,11 @@ class MainActivity : FragmentActivity() {
             MyApplicationTheme(darkTheme = darkTheme) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     MainScreen(
-                        viewModel = viewModel, 
+                        viewModel = viewModel,
                         settingsViewModel = settingsViewModel,
                         securityViewModel = securityViewModel,
                         aiViewModel = aiViewModel,
+                        analyticsViewModel = analyticsViewModel,
                         sttProvider = sttProvider,
                         transactionRepository = app.repository
                     )
@@ -223,10 +233,11 @@ class MainActivity : FragmentActivity() {
 
 @Composable
 fun MainScreen(
-    viewModel: LedgerViewModel, 
+    viewModel: LedgerViewModel,
     settingsViewModel: SettingsViewModel,
     securityViewModel: SecurityViewModel,
     aiViewModel: AiTransactionViewModel,
+    analyticsViewModel: com.example.ui.analytics.AnalyticsViewModel,
     sttProvider: SttProvider,
     transactionRepository: com.example.data.TransactionRepository
 ) {
@@ -304,6 +315,12 @@ fun MainScreen(
                 composable(Route.Transactions.route) {
                     TransactionsScreen(
                         viewModel = viewModel,
+                        settingsViewModel = settingsViewModel
+                    )
+                }
+                composable(Route.Analytics.route) {
+                    AnalyticsScreen(
+                        viewModel = analyticsViewModel,
                         settingsViewModel = settingsViewModel
                     )
                 }

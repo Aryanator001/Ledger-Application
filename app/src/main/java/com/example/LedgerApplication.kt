@@ -28,7 +28,7 @@ class LedgerApplication : Application() {
     val userPreferences by lazy { UserPreferences(this) }
     val securityStore by lazy { SecurityStore(this) }
     val securityRepository by lazy { SecurityRepository(this.dataStore) }
-    
+
     val analyticsCacheDao by lazy { database.analyticsCacheDao() }
     val timeTokenResolver by lazy { TimeTokenResolver() }
     val analyticsKeyResolver by lazy { AnalyticsKeyResolver(timeTokenResolver) }
