@@ -25,6 +25,7 @@ Release builds require env vars: `KEYSTORE_PATH`, `STORE_PASSWORD`, `KEY_PASSWOR
 
 # Single test
 ./gradlew testDebugUnitTest --tests "com.example.ExampleUnitTest.testApi"
+# Note: ExampleUnitTest.testApi makes a live Gemini network call — requires GEMINI_API_KEY in .env and internet access
 
 # Instrumented tests (requires connected device/emulator)
 ./gradlew connectedAndroidTest
@@ -46,10 +47,12 @@ Single-module Android app. No Hilt/Dagger — all dependencies are wired manuall
 | Package | Purpose |
 |---|---|
 | `com.example` | `LedgerApplication` (app-level DI, seeding), `MainActivity` (nav host, theme) |
-| `com.example.data` | Room entities, DAOs, repositories, DataStore prefs, security |
+| `com.example.data` | Room entities, DAOs, repositories, DataStore prefs, `security/` |
 | `com.example.ai` | Full AI pipeline: STT → intent → extract/query → state |
 | `com.example.analytics` | Write-through analytics cache over Room |
 | `com.example.ui` | Compose screens, components, ViewModels, navigation, theme |
+| `com.example.ui.analytics` | `AnalyticsViewModel`, `GeminiInsightsService`, `ReportExporter` |
+| `com.example.ui.security` | `LockScreen`, `SecuritySettingsScreen`, `SecurityViewModel` |
 
 ### AI Pipeline
 
@@ -76,13 +79,13 @@ SttProvider (Android native STT)
 
 ### Data Layer
 
-Room database (`ledger_database`, v8). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`. All migrations live in `AppDatabase`. `fallbackToDestructiveMigration` is enabled as a last resort. `Budget` tracks per-category spending limits; `BudgetRepository` is wired on `LedgerApplication`.
+Room database (`ledger_database`, v8). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`. All migrations live in `AppDatabase`. Migration path: 1→2, 4→5, 5→6, 6→8 (version 3 and 7 were skipped — do not create migrations for those numbers). `fallbackToDestructiveMigration` is enabled as a last resort. `Budget` tracks per-category spending limits; `BudgetRepository` is wired on `LedgerApplication`.
 
 `TransactionRepository` is the single write path for transactions; it hooks `AnalyticsCacheUpdater` on each mutation.
 
 ### Analytics Tab
 
-`AnalyticsViewModel` drives the Analytics screen. It surfaces:
+`AnalyticsViewModel` (`com.example.ui.analytics`) drives the Analytics screen. It surfaces:
 - **Business health** (`BusinessHealthData`) — income vs expense net, computed via `AnalyticsService`
 - **Outstanding balances** — receivables/payables derived from tagged transactions
 - **Trend chart** — `TrendPoint` list, switchable between daily/weekly/monthly granularity

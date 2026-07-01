@@ -79,7 +79,6 @@ class GeminiTransactionExtractor : TransactionExtractor {
                 put("generationConfig", JSONObject().apply {
                     put("temperature", 0.1)
                     put("responseMimeType", "application/json")
-                    put("thinkingConfig", JSONObject().put("thinkingLevel", "low"))
                 })
             }
 

@@ -17,9 +17,8 @@ class GeminiInsightsService {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    // gemini-3.1-pro-preview is not yet available; using the closest capable model.
     private val modelUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-pro:generateContent"
 
     suspend fun generateInsight(
         totalIncomePaise: Long,

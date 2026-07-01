@@ -57,13 +57,12 @@ class GeminiQueryParser(
         val apiKey = apiKeyProvider()
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") return@withContext null
 
-        val requestBody = buildRequestBody(transcript)
-        val request = Request.Builder()
-            .url("${"$"}endpoint?key=${"$"}apiKey")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
         try {
+            val requestBody = buildRequestBody(transcript)
+            val request = Request.Builder()
+                .url("$endpoint?key=$apiKey")
+                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                .build()
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@withContext null
                 val responseBody = response.body?.string() ?: return@withContext null
@@ -84,7 +83,6 @@ class GeminiQueryParser(
             put("generationConfig", JSONObject().apply {
                 put("temperature", 0.1)
                 put("responseMimeType", "application/json")
-                put("thinkingConfig", JSONObject().put("thinkingLevel", "medium"))
             })
         }
     }

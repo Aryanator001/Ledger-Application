@@ -80,16 +80,14 @@ class GeminiQuerySynthesizer(
             put("generationConfig", JSONObject().apply {
                 put("temperature", 0.4)
                 put("responseMimeType", "text/plain")
-                put("thinkingConfig", JSONObject().put("thinkingLevel", "low"))
             })
         }
 
-        val request = Request.Builder()
-            .url("${"$"}endpoint?key=${"$"}apiKey")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
         try {
+            val request = Request.Builder()
+                .url("$endpoint?key=$apiKey")
+                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                .build()
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@withContext null
                 val body = response.body?.string() ?: return@withContext null

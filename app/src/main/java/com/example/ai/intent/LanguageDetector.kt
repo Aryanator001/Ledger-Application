@@ -13,13 +13,21 @@ class LanguageDetector {
         "ko", "ka", "ki", "ke", "se", "mein", "me", "ne", "par", "tak",
         "diya", "diye", "diyaa", "di", "dia",
         "liya", "liye", "li", "lia",
-        "mila", "mile", "milा",
-        "rupaye", "rupye", "rupaiya", "rupees", "paisa", "paise",
+        "mila", "mile",
+        "rupaye", "rupye", "rupaiya", "paisa", "paise",
         "kitna", "kitne", "kitni", "kya", "kaun", "kab", "kahan", "kaise",
         "kharch", "kharcha", "kharida", "kharide",
         "bheja", "bheje", "aaya", "aaye", "gaya", "gaye",
         "udhaar", "udhar", "hisab", "hisaab", "baki", "baaki",
-        "batao", "bata", "dikhao", "dikha", "wala", "waala", "bhai", "ji"
+        "batao", "bata", "dikhao", "dikha", "wala", "waala", "bhai", "ji",
+        // Time reference words
+        "aaj", "kal", "parso", "pichle", "pichhle", "mahine", "hafte", "saal",
+        // Transaction verbs
+        "jama", "nikala", "nikali", "nikale", "kata", "kati", "kate",
+        "wapas", "vapas", "becha", "bechi", "khareed",
+        "utha", "uthai", "bhara", "bhari",
+        // Account / reporting words
+        "khata", "hisaab"
     )
 
     fun detect(transcript: String): DetectedLanguage {

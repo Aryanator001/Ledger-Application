@@ -101,12 +101,20 @@ class TranscriptNormalizer {
      * 5. Handle "N.5" patterns ("dhai" = 2.5, "sawa" = 1.25x, "dedh" = 1.5).
      * Returns the cleaned string. Always preserves entity names and action verbs.
      */
+    // Regex: digit(s), optional decimal, then a compact multiplier suffix glued together.
+    // e.g. "5k" -> "5 k", "2.5L" -> "2.5 l", "10lakh" -> "10 lakh", "3cr" -> "3 cr"
+    private val compactNumberRegex = Regex("""(\d+(?:\.\d+)?)(k|l\b|lac\b|lakh\b|cr\b|crore\b|k\b)""", RegexOption.IGNORE_CASE)
+
     fun normalize(transcript: String): String {
         if (transcript.isBlank()) return transcript
 
         // Remove currency symbols inline.
         var cleaned = transcript.lowercase().trim()
         currencySymbols.forEach { cleaned = cleaned.replace(it.toString(), " ") }
+
+        // Split compact number+suffix tokens so the token loop can handle them.
+        // "5k" -> "5 k", "2L" -> "2 l", "10lakh" -> "10 lakh"
+        cleaned = compactNumberRegex.replace(cleaned) { mr -> "${mr.groupValues[1]} ${mr.groupValues[2].lowercase()}" }
 
         val tokens = cleaned.split(Regex("\\s+")).toMutableList()
         val result = mutableListOf<String>()
