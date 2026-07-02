@@ -18,5 +18,8 @@ data class Budget(
     val period: String = "MONTHLY",   // "WEEKLY" | "MONTHLY" | "YEARLY"
     val rollover: Boolean = false,
     @ColumnInfo(name = "alert_at") val alertAt: Double = 0.80,
-    @ColumnInfo(name = "start_date") val startDate: Long = System.currentTimeMillis()
+    @ColumnInfo(name = "start_date") val startDate: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "ledger_scope_id") val ledgerScopeId: String? = null,
+    @ColumnInfo(name = "last_updated") val lastUpdated: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false
 )

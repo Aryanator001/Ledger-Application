@@ -9,13 +9,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.analytics.AnalyticsCache
 import com.example.analytics.AnalyticsCacheDao
 
-@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class], version = 8, exportSchema = false)
+@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class, UserProfile::class, LedgerScope::class], version = 10, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun accountDao(): AccountDao
     abstract fun budgetDao(): BudgetDao
     abstract fun analyticsCacheDao(): AnalyticsCacheDao
+    abstract fun userProfileDao(): UserProfileDao
+    abstract fun ledgerScopeDao(): LedgerScopeDao
 
     companion object {
         @Volatile
@@ -85,6 +87,63 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create user_profiles and ledger_scopes tables
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `user_profiles` (
+                        `uid` TEXT NOT NULL,
+                        `displayName` TEXT NOT NULL,
+                        `email` TEXT NOT NULL,
+                        `photoUrl` TEXT,
+                        `businessName` TEXT,
+                        `phoneNumber` TEXT,
+                        `lastUpdated` INTEGER NOT NULL,
+                        `isDeleted` INTEGER NOT NULL,
+                        PRIMARY KEY(`uid`)
+                    )
+                """.trimIndent())
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `ledger_scopes` (
+                        `id` TEXT NOT NULL,
+                        `profileId` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `lastUpdated` INTEGER NOT NULL,
+                        `isDeleted` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`),
+                        FOREIGN KEY(`profileId`) REFERENCES `user_profiles`(`uid`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                // Alter Accounts
+                database.execSQL("ALTER TABLE accounts ADD COLUMN ledger_scope_id TEXT")
+                database.execSQL("ALTER TABLE accounts ADD COLUMN last_updated INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE accounts ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0")
+
+                // Alter Transactions
+                database.execSQL("ALTER TABLE transactions ADD COLUMN ledger_scope_id TEXT")
+                database.execSQL("ALTER TABLE transactions ADD COLUMN last_updated INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE transactions ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0")
+
+                // Alter Budgets
+                database.execSQL("ALTER TABLE budgets ADD COLUMN ledger_scope_id TEXT")
+                database.execSQL("ALTER TABLE budgets ADD COLUMN last_updated INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE budgets ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE user_profiles ADD COLUMN businessType TEXT")
+                database.execSQL("ALTER TABLE user_profiles ADD COLUMN address TEXT")
+                database.execSQL("ALTER TABLE user_profiles ADD COLUMN website TEXT")
+                database.execSQL("ALTER TABLE user_profiles ADD COLUMN gstNumber TEXT")
+                database.execSQL("ALTER TABLE user_profiles ADD COLUMN panNumber TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -92,7 +151,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ledger_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

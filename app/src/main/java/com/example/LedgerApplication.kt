@@ -28,6 +28,7 @@ class LedgerApplication : Application() {
     val userPreferences by lazy { UserPreferences(this) }
     val securityStore by lazy { SecurityStore(this) }
     val securityRepository by lazy { SecurityRepository(this.dataStore) }
+    val authRepository by lazy { com.example.data.AuthRepositoryImpl(securityStore) }
 
     val analyticsCacheDao by lazy { database.analyticsCacheDao() }
     val timeTokenResolver by lazy { TimeTokenResolver() }
@@ -44,11 +45,23 @@ class LedgerApplication : Application() {
             transactionDao = database.transactionDao(),
             categoryDao = database.categoryDao(),
             accountDao = database.accountDao(),
+            userPreferences = userPreferences,
             analyticsCacheUpdater = analyticsCacheUpdater
         ) 
     }
-    val accountRepository by lazy { com.example.data.AccountRepository(database.accountDao(), database.transactionDao()) }
-    val budgetRepository by lazy { com.example.data.BudgetRepository(database.budgetDao()) }
+    val accountRepository by lazy { 
+        com.example.data.AccountRepository(
+            database.accountDao(), 
+            database.transactionDao(),
+            userPreferences
+        ) 
+    }
+    val budgetRepository by lazy { 
+        com.example.data.BudgetRepository(
+            database.budgetDao(),
+            userPreferences
+        ) 
+    }
     val analyticsService by lazy { com.example.data.AnalyticsService(repository, accountRepository, budgetRepository) }
 
     override fun onCreate() {

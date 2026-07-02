@@ -18,7 +18,10 @@ data class Account(
     @ColumnInfo(name = "is_archived") val isArchived: Boolean = false,
     @ColumnInfo(name = "is_hidden") val isHidden: Boolean = false,
     @ColumnInfo(name = "exclude_from_total") val excludeFromTotal: Boolean = false,
-    @ColumnInfo(name = "sort_order") val sortOrder: Int = 0
+    @ColumnInfo(name = "sort_order") val sortOrder: Int = 0,
+    @ColumnInfo(name = "ledger_scope_id") val ledgerScopeId: String? = null,
+    @ColumnInfo(name = "last_updated") val lastUpdated: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false
 ) {
     fun calculateBalance(transactions: List<Transaction>): Double {
         var bal = startingBalance

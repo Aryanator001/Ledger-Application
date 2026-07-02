@@ -95,6 +95,8 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
     object AccountDetail : Route("account_detail/{accountId}", "Account Details", Icons.Default.Settings) {
         fun createRoute(accountId: String) = "account_detail/$accountId"
     }
+    object Login : Route("login", "Login", Icons.Default.Settings)
+    object ProfileSetup : Route("profile_setup", "Profile Setup", Icons.Default.Settings)
 }
 
 val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
@@ -178,6 +180,9 @@ class MainActivity : FragmentActivity() {
 
             val analyticsFactory = AnalyticsViewModelFactory(app.repository, app.analyticsService, GeminiInsightsService())
             val analyticsViewModel: AnalyticsViewModel = viewModel(factory = analyticsFactory)
+            
+            val authFactory = com.example.ui.viewmodel.AuthViewModelFactory(app.authRepository, app.securityStore)
+            val authViewModel: com.example.ui.viewmodel.AuthViewModel = viewModel(factory = authFactory)
 
             val sttProvider: SttProvider = AndroidNativeSttProvider(this)
 
@@ -186,6 +191,8 @@ class MainActivity : FragmentActivity() {
 
             val themeModeState by settingsViewModel.theme.collectAsStateWithLifecycle()
             var themeMode by remember { mutableStateOf(initialThemeMode) }
+
+            val activeSession by authViewModel.activeSession.collectAsStateWithLifecycle()
 
             LaunchedEffect(themeModeState) {
                 themeMode = themeModeState
@@ -205,8 +212,11 @@ class MainActivity : FragmentActivity() {
                         securityViewModel = securityViewModel,
                         aiViewModel = aiViewModel,
                         analyticsViewModel = analyticsViewModel,
+                        authViewModel = authViewModel,
                         sttProvider = sttProvider,
-                        transactionRepository = app.repository
+                        transactionRepository = app.repository,
+                        app = app,
+                        startDestination = if (activeSession == null) Route.Login.route else Route.Home.route
                     )
                     
                     if (appLockEnabled && isLocked) {
@@ -239,13 +249,34 @@ fun MainScreen(
     securityViewModel: SecurityViewModel,
     aiViewModel: AiTransactionViewModel,
     analyticsViewModel: com.example.ui.analytics.AnalyticsViewModel,
+    authViewModel: com.example.ui.viewmodel.AuthViewModel,
     sttProvider: SttProvider,
-    transactionRepository: com.example.data.TransactionRepository
+    transactionRepository: com.example.data.TransactionRepository,
+    app: LedgerApplication,
+    startDestination: String
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val showBottomBar = currentDestination?.route in bottomNavItems.map { it.route }
+
+    // Lock startDestination at first composition — NavHost uses it as a remember key,
+    // so letting it change when activeSession goes non-null would recreate the graph
+    // and navigate straight to Home, bypassing ProfileSetup.
+    val rememberedStartDestination = remember { startDestination }
+
+    val hasCompletedOnboarding by app.userPreferences.hasCompletedOnboarding
+        .collectAsStateWithLifecycle(initialValue = startDestination != Route.Login.route)
+
+    // If session becomes null, route to login
+    val activeSession by authViewModel.activeSession.collectAsStateWithLifecycle()
+    LaunchedEffect(activeSession) {
+        if (activeSession == null && currentDestination?.route != Route.Login.route) {
+            navController.navigate(Route.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -285,9 +316,34 @@ fun MainScreen(
         Box(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = Route.Home.route,
+                startDestination = rememberedStartDestination,
                 modifier = Modifier.fillMaxSize()
             ) {
+                composable(Route.Login.route) {
+                    com.example.ui.screens.LoginScreen(
+                        authViewModel = authViewModel,
+                        onLoginSuccess = {
+                            val dest = if (hasCompletedOnboarding) Route.Home.route else Route.ProfileSetup.route
+                            navController.navigate(dest) {
+                                popUpTo(Route.Login.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable(Route.ProfileSetup.route) {
+                    com.example.ui.screens.ProfileSetupScreen(
+                        authViewModel = authViewModel,
+                        databaseStitcher = com.example.data.DatabaseStitcher(app.database),
+                        userProfileDao = app.database.userProfileDao(),
+                        ledgerScopeDao = app.database.ledgerScopeDao(),
+                        userPreferences = app.userPreferences,
+                        onSetupComplete = {
+                            navController.navigate(Route.Home.route) {
+                                popUpTo(Route.ProfileSetup.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable(Route.Home.route) {
                     HomeDashboard(
                         viewModel = viewModel,

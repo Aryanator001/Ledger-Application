@@ -1,44 +1,64 @@
 package com.example.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TransactionRepository(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val accountDao: AccountDao,
+    private val userPreferences: UserPreferences,
     private val analyticsCacheUpdater: com.example.analytics.AnalyticsCacheUpdater? = null
 ) {
-    val allTransactions: Flow<List<Transaction>> = transactionDao.getAllTransactions()
-    val allTransactionsWithCategory: Flow<List<TransactionWithCategory>> = transactionDao.getAllTransactionsWithCategory()
+    private suspend fun getScopeId(): String = userPreferences.activeLedgerScopeId.first() ?: ""
+
+    val allTransactions: Flow<List<Transaction>> = userPreferences.activeLedgerScopeId.flatMapLatest { scopeId ->
+        if (scopeId == null) flowOf(emptyList()) else transactionDao.getAllTransactions(scopeId)
+    }
+
+    val allTransactionsWithCategory: Flow<List<TransactionWithCategory>> = userPreferences.activeLedgerScopeId.flatMapLatest { scopeId ->
+        if (scopeId == null) flowOf(emptyList()) else transactionDao.getAllTransactionsWithCategory(scopeId)
+    }
+
     val allCategories: Flow<List<Category>> = categoryDao.getAllCategories()
-    val allAccounts: Flow<List<Account>> = accountDao.getAllAccounts()
+    
+    val allAccounts: Flow<List<Account>> = userPreferences.activeLedgerScopeId.flatMapLatest { scopeId ->
+        if (scopeId == null) flowOf(emptyList()) else accountDao.getAllAccounts(scopeId)
+    }
 
-    suspend fun getAccountCount(): Int = accountDao.getAccountCount()
+    suspend fun getAccountCount(): Int = accountDao.getAccountCount(getScopeId())
 
-    suspend fun getTransactionCount(): Int = transactionDao.getTransactionCount()
+    suspend fun getTransactionCount(): Int = transactionDao.getTransactionCount(getScopeId())
 
-    suspend fun getAccountById(id: String): Account? = accountDao.getAccountById(id)
+    suspend fun getAccountById(id: String): Account? = accountDao.getAccountById(id, getScopeId())
 
-    suspend fun getTransactionById(id: String): Transaction? = transactionDao.getTransactionById(id)
+    suspend fun getTransactionById(id: String): Transaction? = transactionDao.getTransactionById(id, getScopeId())
 
     fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
-        return if (accountId == "all") {
-            transactionDao.getAllTransactions()
-        } else {
-            transactionDao.getTransactionsByAccount(accountId)
+        return userPreferences.activeLedgerScopeId.flatMapLatest { scopeId ->
+            if (scopeId == null) flowOf(emptyList())
+            else if (accountId == "all") transactionDao.getAllTransactions(scopeId)
+            else transactionDao.getTransactionsByAccount(accountId, scopeId)
         }
     }
 
     suspend fun insertTransaction(transaction: Transaction) {
-        transactionDao.insertTransaction(transaction)
-        analyticsCacheUpdater?.onTransactionInserted(transaction)
+        val finalTransaction = if (transaction.ledgerScopeId == null) transaction.copy(ledgerScopeId = getScopeId()) else transaction
+        transactionDao.insertTransaction(finalTransaction)
+        analyticsCacheUpdater?.onTransactionInserted(finalTransaction)
     }
 
     suspend fun updateTransaction(transaction: Transaction) {
-        val old = transactionDao.getTransactionById(transaction.id)
-        transactionDao.updateTransaction(transaction)
+        val scopeId = transaction.ledgerScopeId ?: getScopeId()
+        val finalTransaction = if (transaction.ledgerScopeId == null) transaction.copy(ledgerScopeId = scopeId) else transaction
+        val old = transactionDao.getTransactionById(finalTransaction.id, scopeId)
+        transactionDao.updateTransaction(finalTransaction)
         if (old != null) {
-            analyticsCacheUpdater?.onTransactionUpdated(old, transaction)
+            analyticsCacheUpdater?.onTransactionUpdated(old, finalTransaction)
         }
     }
 
@@ -47,7 +67,8 @@ class TransactionRepository(
     }
 
     suspend fun insertAccount(account: Account) {
-        accountDao.insertAccount(account)
+        val finalAccount = if (account.ledgerScopeId == null) account.copy(ledgerScopeId = getScopeId()) else account
+        accountDao.insertAccount(finalAccount)
     }
 
     suspend fun updateAccount(account: Account) {
@@ -55,35 +76,36 @@ class TransactionRepository(
     }
 
     suspend fun checkDuplicate(title: String, amount: Double, transactionType: String, timeWindow: Long): Boolean {
-        return transactionDao.getDuplicateTransaction(title, amount, transactionType, timeWindow) != null
+        return transactionDao.getDuplicateTransaction(title, amount, transactionType, timeWindow, getScopeId()) != null
     }
 
     suspend fun getPartyBalance(title: String): Double {
-        return transactionDao.getPartyBalance(title) ?: 0.0
+        return transactionDao.getPartyBalance(title, getScopeId()) ?: 0.0
     }
 
     suspend fun deleteById(id: String) {
-        val tx = transactionDao.getTransactionById(id)
-        transactionDao.deleteTransactionById(id)
+        val scopeId = getScopeId()
+        val tx = transactionDao.getTransactionById(id, scopeId)
+        transactionDao.deleteTransactionById(id, scopeId)
         if (tx != null) {
             analyticsCacheUpdater?.onTransactionDeleted(tx)
         }
     }
 
     suspend fun getByDateRange(startMs: Long, endMs: Long): List<Transaction> {
-        return transactionDao.getByDateRange(startMs, endMs)
+        return transactionDao.getByDateRange(startMs, endMs, getScopeId())
     }
 
     suspend fun getByAccount(accountId: String): List<Transaction> {
-        return transactionDao.getByAccount(accountId)
+        return transactionDao.getByAccount(accountId, getScopeId())
     }
 
     suspend fun getByCategory(categoryId: String): List<Transaction> {
-        return transactionDao.getByCategory(categoryId)
+        return transactionDao.getByCategory(categoryId, getScopeId())
     }
 
     suspend fun search(query: String): List<Transaction> {
-        return transactionDao.search(query)
+        return transactionDao.search(query, getScopeId())
     }
 
     suspend fun findDuplicateAggressive(
@@ -91,7 +113,7 @@ class TransactionRepository(
         transactionType: String,
         sinceTimestamp: Long
     ): Transaction? {
-        return transactionDao.findDuplicateAggressive(amount, transactionType, sinceTimestamp)
+        return transactionDao.findDuplicateAggressive(amount, transactionType, getScopeId(), sinceTimestamp)
     }
 
     suspend fun findDuplicateModerate(
@@ -101,7 +123,7 @@ class TransactionRepository(
         sinceTimestamp: Long,
         untilTimestamp: Long
     ): Transaction? {
-        return transactionDao.findDuplicateModerate(amount, transactionType, entity, sinceTimestamp, untilTimestamp)
+        return transactionDao.findDuplicateModerate(amount, transactionType, entity, sinceTimestamp, untilTimestamp, getScopeId())
     }
 
     suspend fun findDuplicateWeak(
@@ -112,7 +134,7 @@ class TransactionRepository(
         sinceTimestamp: Long,
         untilTimestamp: Long
     ): Transaction? {
-        return transactionDao.findDuplicateWeak(amount, transactionType, entity, categoryId, sinceTimestamp, untilTimestamp)
+        return transactionDao.findDuplicateWeak(amount, transactionType, entity, categoryId, sinceTimestamp, untilTimestamp, getScopeId())
     }
 
     suspend fun getQueryAggregate(
@@ -122,7 +144,7 @@ class TransactionRepository(
         startMs: Long,
         endMs: Long
     ): com.example.ai.query.QueryAggregate {
-        val rows = transactionDao.getQueryAggregateRows(entity, categoryId, direction, startMs, endMs)
+        val rows = transactionDao.getQueryAggregateRows(entity, categoryId, direction, startMs, endMs, getScopeId())
         val total = rows.sumOf { it.amount }
         val ids = rows.map { it.id }
         return com.example.ai.query.QueryAggregate(
@@ -137,7 +159,7 @@ class TransactionRepository(
         startMs: Long,
         endMs: Long
     ): com.example.ai.query.QueryAggregate {
-        val row = transactionDao.getEntityNetBalanceRow(entity, startMs, endMs)
+        val row = transactionDao.getEntityNetBalanceRow(entity, startMs, endMs, getScopeId())
         val net = row?.netAmount ?: 0.0
         val count = row?.rowCount ?: 0
         val ids = row?.idList?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
@@ -148,11 +170,11 @@ class TransactionRepository(
         )
     }
 
-    suspend fun getDistinctTitles(): List<String> = transactionDao.getDistinctTitles()
+    suspend fun getDistinctTitles(): List<String> = transactionDao.getDistinctTitles(getScopeId())
 
     suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long) =
-        transactionDao.getIncomeExpenseTotalsForRange(startMs, endMs)
+        transactionDao.getIncomeExpenseTotalsForRange(startMs, endMs, getScopeId())
 
     suspend fun getAllTransactionsOnce(): List<Transaction> =
-        transactionDao.getAllTransactionsOnce()
+        transactionDao.getAllTransactionsOnce(getScopeId())
 }

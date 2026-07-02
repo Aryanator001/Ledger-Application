@@ -42,6 +42,10 @@ data class Transaction(
     @ColumnInfo(name = "is_archived") val isArchived: Boolean = false,
     
     // Legacy fields maintained temporarily just in case if UI expects them
-    @ColumnInfo(name = "raw_transcript") val rawTranscript: String? = null
+    @ColumnInfo(name = "raw_transcript") val rawTranscript: String? = null,
+    
+    @ColumnInfo(name = "ledger_scope_id") val ledgerScopeId: String? = null,
+    @ColumnInfo(name = "last_updated") val lastUpdated: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false
 )
 

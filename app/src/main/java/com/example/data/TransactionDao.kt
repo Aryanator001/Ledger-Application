@@ -9,30 +9,30 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
-    fun getAllTransactions(): Flow<List<Transaction>>
+    @Query("SELECT * FROM transactions WHERE ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    fun getAllTransactions(ledgerScopeId: String): Flow<List<Transaction>>
 
     @androidx.room.Transaction
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
-    fun getAllTransactionsWithCategory(): Flow<List<TransactionWithCategory>>
+    @Query("SELECT * FROM transactions WHERE ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    fun getAllTransactionsWithCategory(ledgerScopeId: String): Flow<List<TransactionWithCategory>>
 
-    @Query("SELECT COUNT(*) FROM transactions")
-    suspend fun getTransactionCount(): Int
+    @Query("SELECT COUNT(*) FROM transactions WHERE ledger_scope_id = :ledgerScopeId AND is_deleted = 0")
+    suspend fun getTransactionCount(ledgerScopeId: String): Int
 
-    @Query("SELECT * FROM transactions WHERE account_id = :accountId ORDER BY date DESC")
-    fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>>
+    @Query("SELECT * FROM transactions WHERE account_id = :accountId AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    fun getTransactionsByAccount(accountId: String, ledgerScopeId: String): Flow<List<Transaction>>
 
     @Query("""
     SELECT SUM(CASE WHEN type IN ('INCOME', 'CREDIT') THEN amount ELSE -amount END) 
     FROM transactions 
-    WHERE title LIKE '%' || :title || '%'""")
-    suspend fun getPartyBalance(title: String): Double?
+    WHERE title LIKE '%' || :title || '%' AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0""")
+    suspend fun getPartyBalance(title: String, ledgerScopeId: String): Double?
 
-    @Query("SELECT * FROM transactions WHERE title = :title AND amount = :amount AND type = :type AND date >= :fiveMinutesAgo LIMIT 1")
-    suspend fun getDuplicateTransaction(title: String, amount: Double, type: String, fiveMinutesAgo: Long): Transaction?
+    @Query("SELECT * FROM transactions WHERE title = :title AND amount = :amount AND type = :type AND date >= :fiveMinutesAgo AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 LIMIT 1")
+    suspend fun getDuplicateTransaction(title: String, amount: Double, type: String, fiveMinutesAgo: Long, ledgerScopeId: String): Transaction?
 
-    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
-    suspend fun getTransactionById(id: String): Transaction?
+    @Query("SELECT * FROM transactions WHERE id = :id AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 LIMIT 1")
+    suspend fun getTransactionById(id: String, ledgerScopeId: String): Transaction?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: Transaction)
@@ -40,24 +40,27 @@ interface TransactionDao {
     @Update
     suspend fun updateTransaction(transaction: Transaction)
 
-    @Query("DELETE FROM transactions WHERE id = :id")
-    suspend fun deleteTransactionById(id: String)
+    @Query("DELETE FROM transactions WHERE id = :id AND ledger_scope_id = :ledgerScopeId")
+    suspend fun deleteTransactionById(id: String, ledgerScopeId: String)
 
-    @Query("SELECT * FROM transactions WHERE date >= :startMs AND date <= :endMs ORDER BY date DESC")
-    suspend fun getByDateRange(startMs: Long, endMs: Long): List<Transaction>
+    @Query("SELECT * FROM transactions WHERE date >= :startMs AND date <= :endMs AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun getByDateRange(startMs: Long, endMs: Long, ledgerScopeId: String): List<Transaction>
 
-    @Query("SELECT * FROM transactions WHERE account_id = :accountId ORDER BY date DESC")
-    suspend fun getByAccount(accountId: String): List<Transaction>
+    @Query("SELECT * FROM transactions WHERE account_id = :accountId AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun getByAccount(accountId: String, ledgerScopeId: String): List<Transaction>
 
-    @Query("SELECT * FROM transactions WHERE category_id = :categoryId ORDER BY date DESC")
-    suspend fun getByCategory(categoryId: String): List<Transaction>
+    @Query("SELECT * FROM transactions WHERE category_id = :categoryId AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun getByCategory(categoryId: String, ledgerScopeId: String): List<Transaction>
 
-    @Query("SELECT * FROM transactions WHERE title LIKE '%' || :query || '%' OR (description IS NOT NULL AND description LIKE '%' || :query || '%') OR tags LIKE '%' || :query || '%' ORDER BY date DESC")
-    suspend fun search(query: String): List<Transaction>
+    @Query("SELECT * FROM transactions WHERE (title LIKE '%' || :query || '%' OR (description IS NOT NULL AND description LIKE '%' || :query || '%') OR tags LIKE '%' || :query || '%') AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun search(query: String, ledgerScopeId: String): List<Transaction>
+
     @Query("""
         SELECT * FROM transactions 
         WHERE amount = :amount 
         AND type = :transactionType 
+        AND ledger_scope_id = :ledgerScopeId
+        AND is_deleted = 0
         AND date >= :sinceTimestamp 
         ORDER BY date DESC 
         LIMIT 1
@@ -65,8 +68,12 @@ interface TransactionDao {
     suspend fun findDuplicateAggressive(
         amount: Double,
         transactionType: String,
+        ledgerScopeId: String,
         sinceTimestamp: Long
     ): Transaction?
+
+    @Query("UPDATE transactions SET ledger_scope_id = :ledgerScopeId WHERE ledger_scope_id IS NULL")
+    suspend fun bindUnassignedTransactions(ledgerScopeId: String): Int
 
     @Query("""
         SELECT * FROM transactions 
@@ -75,6 +82,8 @@ interface TransactionDao {
         AND LOWER(title) = LOWER(:entity) 
         AND date >= :sinceTimestamp 
         AND date < :untilTimestamp 
+        AND ledger_scope_id = :ledgerScopeId
+        AND is_deleted = 0
         ORDER BY date DESC 
         LIMIT 1
     """)
@@ -83,7 +92,8 @@ interface TransactionDao {
         transactionType: String,
         entity: String,
         sinceTimestamp: Long,
-        untilTimestamp: Long
+        untilTimestamp: Long,
+        ledgerScopeId: String
     ): Transaction?
 
     @Query("""
@@ -94,6 +104,8 @@ interface TransactionDao {
         AND category_id = :categoryId 
         AND date >= :sinceTimestamp 
         AND date < :untilTimestamp 
+        AND ledger_scope_id = :ledgerScopeId
+        AND is_deleted = 0
         ORDER BY date DESC 
         LIMIT 1
     """)
@@ -103,15 +115,10 @@ interface TransactionDao {
         entity: String,
         categoryId: String,
         sinceTimestamp: Long,
-        untilTimestamp: Long
+        untilTimestamp: Long,
+        ledgerScopeId: String
     ): Transaction?
 
-    /**
-     * Polymorphic aggregate query. NULL parameters act as wildcards.
-     * Uses LIKE for entity matching to stay consistent with getPartyBalance().
-     * Uses type IN ('INCOME', 'CREDIT') for positive-side queries, matching
-     * the existing CREDIT legacy value handling.
-     */
     @Query("""
         SELECT amount, id FROM transactions
         WHERE (:entity IS NULL OR title LIKE '%' || :entity || '%')
@@ -123,6 +130,8 @@ interface TransactionDao {
               )
           AND date >= :startMs
           AND date <= :endMs
+          AND ledger_scope_id = :ledgerScopeId
+          AND is_deleted = 0
         ORDER BY date DESC
     """)
     suspend fun getQueryAggregateRows(
@@ -130,13 +139,10 @@ interface TransactionDao {
         categoryId: String?,
         direction: String?,
         startMs: Long,
-        endMs: Long
+        endMs: Long,
+        ledgerScopeId: String
     ): List<AmountIdRow>
 
-    /**
-     * Net balance for an entity (INCOME/CREDIT minus EXPENSE) within a time range.
-     * Mirrors the SQL pattern from getPartyBalance() exactly, with optional time bounds.
-     */
     @Query("""
         SELECT 
             SUM(CASE WHEN type IN ('INCOME', 'CREDIT') THEN amount ELSE -amount END) AS netAmount,
@@ -146,14 +152,17 @@ interface TransactionDao {
         WHERE title LIKE '%' || :entity || '%'
           AND date >= :startMs
           AND date <= :endMs
+          AND ledger_scope_id = :ledgerScopeId
+          AND is_deleted = 0
     """)
     suspend fun getEntityNetBalanceRow(
         entity: String,
         startMs: Long,
-        endMs: Long
+        endMs: Long,
+        ledgerScopeId: String
     ): EntityBalanceRow?
-    @Query("SELECT DISTINCT title FROM transactions WHERE title != '' ORDER BY title")
-    suspend fun getDistinctTitles(): List<String>
+    @Query("SELECT DISTINCT title FROM transactions WHERE title != '' AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY title")
+    suspend fun getDistinctTitles(ledgerScopeId: String): List<String>
 
     @Query("""
         SELECT
@@ -161,11 +170,13 @@ interface TransactionDao {
             SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) AS expenseTotal
         FROM transactions
         WHERE date >= :startMs AND date <= :endMs
+        AND ledger_scope_id = :ledgerScopeId
+        AND is_deleted = 0
     """)
-    suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long): IncomeExpenseTotalsRow?
+    suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long, ledgerScopeId: String): IncomeExpenseTotalsRow?
 
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
-    suspend fun getAllTransactionsOnce(): List<Transaction>
+    @Query("SELECT * FROM transactions WHERE ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun getAllTransactionsOnce(ledgerScopeId: String): List<Transaction>
 }
 
 data class IncomeExpenseTotalsRow(

@@ -104,4 +104,33 @@ class SecurityStore(context: Context) {
         sharedPreferences.edit().putBoolean("screenshot_protection", protect).apply()
         _screenshotProtection.value = protect
     }
+
+    fun cacheSession(uid: String, displayName: String, email: String, photoUrl: String?, idToken: String?) {
+        sharedPreferences.edit()
+            .putString("cached_uid", uid)
+            .putString("cached_display_name", displayName)
+            .putString("cached_email", email)
+            .putString("cached_photo_url", photoUrl)
+            .putString("cached_id_token", idToken)
+            .apply()
+    }
+
+    fun getCachedSession(): com.example.data.UserSession? {
+        val uid = sharedPreferences.getString("cached_uid", null) ?: return null
+        val displayName = sharedPreferences.getString("cached_display_name", "User") ?: "User"
+        val email = sharedPreferences.getString("cached_email", "") ?: ""
+        val photoUrl = sharedPreferences.getString("cached_photo_url", null)
+        val idToken = sharedPreferences.getString("cached_id_token", null)
+        return com.example.data.UserSession(uid, displayName, email, photoUrl, idToken)
+    }
+
+    fun clearCachedSession() {
+        sharedPreferences.edit()
+            .remove("cached_uid")
+            .remove("cached_display_name")
+            .remove("cached_email")
+            .remove("cached_photo_url")
+            .remove("cached_id_token")
+            .apply()
+    }
 }

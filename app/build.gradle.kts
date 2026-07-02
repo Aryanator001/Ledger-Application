@@ -4,6 +4,7 @@ plugins {
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
+  alias(libs.plugins.google.services)
   kotlin("plugin.serialization") version "2.2.10"
 }
 
@@ -74,6 +75,7 @@ dependencies {
   implementation("androidx.core:core-splashscreen:1.0.1")
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
+  implementation("com.google.firebase:firebase-auth")
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   // implementation(libs.androidx.camera.camera2)
@@ -100,6 +102,10 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
+  implementation("androidx.credentials:credentials:1.6.0")
+  implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+  implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
+
   // implementation(libs.firebase.ai)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)

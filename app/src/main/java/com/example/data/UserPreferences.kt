@@ -28,7 +28,12 @@ class UserPreferences(private val context: Context) {
         val CURRENCY_CODE = stringPreferencesKey("currency_code")
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
         val CATEGORIES_SEEDED = booleanPreferencesKey("categories_seeded")
+        val ACTIVE_USER_ID = stringPreferencesKey("active_user_id")
+        val ACTIVE_LEDGER_SCOPE_ID = stringPreferencesKey("active_ledger_scope_id")
     }
+
+    val activeUserId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_USER_ID] }
+    val activeLedgerScopeId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_LEDGER_SCOPE_ID] }
 
     val theme: Flow<String> = context.dataStore.data.map { it[THEME] ?: "System" }
     val firstDayOfWeek: Flow<String> = context.dataStore.data.map { it[FIRST_DAY_OF_WEEK] ?: "Monday" }
@@ -53,6 +58,21 @@ class UserPreferences(private val context: Context) {
     suspend fun setDefaultAccountId(value: String) { context.dataStore.edit { it[DEFAULT_ACCOUNT_ID] = value } }
     suspend fun setAutoCategorise(value: Boolean) { context.dataStore.edit { it[AUTO_CATEGORISE] = value } }
     suspend fun setCategoriesSeeded(value: Boolean) { context.dataStore.edit { it[CATEGORIES_SEEDED] = value } }
+    
+    suspend fun setActiveUserId(value: String?) {
+        context.dataStore.edit { 
+            if (value == null) it.remove(ACTIVE_USER_ID)
+            else it[ACTIVE_USER_ID] = value
+        }
+    }
+
+    suspend fun setActiveLedgerScopeId(value: String?) {
+        context.dataStore.edit {
+            if (value == null) it.remove(ACTIVE_LEDGER_SCOPE_ID)
+            else it[ACTIVE_LEDGER_SCOPE_ID] = value
+        }
+    }
+
     suspend fun setCurrency(code: String, symbol: String) {
         context.dataStore.edit {
             it[CURRENCY_CODE] = code
