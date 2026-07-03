@@ -120,10 +120,29 @@ New screens: `LoginScreen` (Google sign-in entry point) and `ProfileSetupScreen`
 ### Navigation
 
 Two patterns coexist in `MainActivity`:
-- **String routes** — legacy `Route` sealed class. Bottom nav: `Home`, `Transactions`, `Analytics`, `Settings`. Deep routes: `AccountDetail`, `GeneralSettings`, `SecuritySettings`, etc.
+- **String routes** — legacy `Route` sealed class. Bottom nav: `Home`, `Transactions`, `Analytics`, `Settings`. Deep routes: `AccountDetail`, `GeneralSettings`, `SecuritySettings`, `BackupRestore`, `Reminders`, `RecurringReminders`, `Login`, `ProfileSetup`, etc.
 - **Type-safe routes** — `@Serializable` objects in `AppRoutes.kt` (currently `FilteredLedger`); use `navController.navigate(FilteredLedger(...))` and `backStackEntry.toRoute<FilteredLedger>()`.
 
 New destinations should prefer the type-safe pattern.
+
+### ViewModels
+
+Two locations — don't confuse them:
+- `com.example.ai`: `AiTransactionViewModel` (owns the AI pipeline `AiState` flow)
+- `com.example.ui.viewmodel`: `AuthViewModel`, `LedgerViewModel`, `SettingsViewModel`
+- `com.example.ui.analytics`: `AnalyticsViewModel`
+- `com.example.ui.security`: `SecurityViewModel`
+
+All use manual `ViewModelProvider.Factory`; no Hilt. Factories are named `<ViewModel>Factory` and wired from `LedgerApplication`.
+
+### UI Theming Rules
+
+Hard constraints — do not deviate:
+- **Colors**: Always use `MaterialTheme.appColors.*` tokens (e.g. `bgBase`, `bgSurface`, `bgSurface2`, `primary`, `textPrimary`, `textSecondary`, `textTertiary`, `borderLight`). Never hardcode hex values or use `Color.Red`, `Color.Gray`, etc.
+- **Typography**: Always use `AppTypography.*` tokens. Never use `MaterialTheme.typography.*` or inline `TextStyle()` unless the token genuinely doesn't exist — if missing, add a new token to the theme file rather than inlining.
+- **Spacing**: Use the 8dp/12dp/16dp/24dp grid that existing screens follow. Don't invent new arbitrary dp values.
+- **New semantic colors** (e.g. a "warning yellow"): Add as a new token to the theme file — never inline it at the call site.
+- Before reading any existing screen for reference patterns, check `HomeDashboard.kt` and the theme files in `com.example.ui.theme`.
 
 ### Categories
 
