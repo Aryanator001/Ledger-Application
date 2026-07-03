@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -109,8 +110,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !isThemeLoaded }
-        enableEdgeToEdge()
-        
+
         val app = application as LedgerApplication
 
         lifecycleScope.launch {
@@ -165,7 +165,31 @@ class MainActivity : FragmentActivity() {
                 "System"
             }
         }
-        
+
+        // Use explicit SystemBarStyle (not the default auto) so the OnPreDrawListener
+        // auto-detector is never installed — otherwise it continuously overrides the
+        // isAppearanceLightStatusBars flag set in MyApplicationTheme's SideEffect.
+        val isSystemDark = (resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val initialDarkTheme = when (initialThemeMode) {
+            "Light" -> false
+            "Dark" -> true
+            else -> isSystemDark
+        }
+        enableEdgeToEdge(
+            statusBarStyle = if (initialDarkTheme) {
+                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+            },
+            navigationBarStyle = if (initialDarkTheme) {
+                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+            }
+        )
+
         setContent {
             val ledgerFactory = LedgerViewModelFactory(app.repository, app.accountRepository, app.analyticsService)
             val viewModel: LedgerViewModel = viewModel(factory = ledgerFactory)
@@ -279,6 +303,7 @@ fun MainScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.appColors.bgBase,
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
