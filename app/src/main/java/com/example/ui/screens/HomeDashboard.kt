@@ -10,8 +10,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
 import com.example.data.Transaction
 import com.example.data.TransactionWithCategory
 import com.example.ui.components.cards.SummaryCard
@@ -79,12 +81,12 @@ fun HomeDashboard(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recent Transactions",
+                    text = stringResource(R.string.dashboard_recent_transactions),
                     style = AppTypography.headline3,
                     color = MaterialTheme.appColors.textPrimary
                 )
                 TextButton(onClick = onNavigateToTransactions) {
-                    Text("See All", color = MaterialTheme.appColors.primary)
+                    Text(stringResource(R.string.dashboard_see_all), color = MaterialTheme.appColors.primary)
                 }
             }
             
@@ -92,7 +94,7 @@ fun HomeDashboard(
             
             if (allTransactionsWithCategory.isEmpty()) {
                 Box(modifier = Modifier.weight(1f), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    Text("No transactions yet. Add some to get started!", color = MaterialTheme.appColors.textTertiary)
+                    Text(stringResource(R.string.dashboard_no_transactions), color = MaterialTheme.appColors.textTertiary)
                 }
             } else {
                 LazyColumn(
@@ -136,7 +138,7 @@ fun HomeDashboard(
                     null -> "EXPENSE"
                 }
                 viewModel.addTransaction(
-                    title = candidate.entity ?: "Voice Transaction",
+                    title = candidate.entity ?: context.getString(R.string.dashboard_voice_transaction),
                     amount = candidate.amount ?: 0.0,
                     type = type,
                     description = candidate.notes,
@@ -145,7 +147,7 @@ fun HomeDashboard(
                     accountId = accountId
                 )
                 aiViewModel.markCommitted("saved", candidate)
-                android.widget.Toast.makeText(context, "Auto-saved ✓ ${candidate.entity ?: ""} ₹${candidate.amount?.toLong() ?: 0}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.dashboard_auto_saved, candidate.entity ?: "", candidate.amount?.toLong() ?: 0L), android.widget.Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -171,7 +173,7 @@ fun HomeDashboard(
                         sttProvider.start(sttCallbacks)
                     } else {
                         aiViewModel.onSttError(FailureReason.SttPermissionDenied)
-                        android.widget.Toast.makeText(context, "Microphone permission required for voice input", android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(context, context.getString(R.string.dashboard_mic_permission), android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
             } else {
@@ -224,7 +226,7 @@ fun HomeDashboard(
                 aiViewModel.markCommitted("saved", currentState.candidate)
             }
 
-            android.widget.Toast.makeText(context, "Transaction saved ✓", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.dashboard_transaction_saved), android.widget.Toast.LENGTH_SHORT).show()
         }
 
         // Floating Chat GPT pill bar replaced with manual parsing
@@ -305,7 +307,7 @@ fun HomeDashboard(
                             parsedAmount = amount
                             showTransactionSheet = true
                         } else {
-                            android.widget.Toast.makeText(context, "Include an amount (e.g., '500')", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(context, context.getString(R.string.dashboard_include_amount), android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -324,7 +326,7 @@ fun HomeDashboard(
                     parsedAmount = null
                     showTransactionSheet = true
                 },
-                placeholder = "Add expense 'Lunch 200'...",
+                placeholder = stringResource(R.string.chat_input_placeholder_alt),
                 isListening = aiState is AiState.Listening || aiState is AiState.Transcribing
             )
         }

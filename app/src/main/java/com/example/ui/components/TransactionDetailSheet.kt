@@ -32,7 +32,9 @@ import com.example.ui.viewmodel.LedgerViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
+import com.example.R
 
 @Composable
 fun CategoryIconDisplay(iconName: String, modifier: Modifier = Modifier) {
@@ -115,7 +117,7 @@ fun TransactionDetailSheet(
                 .padding(bottom = 24.dp)
         ) {
             Text(
-                text = if (existingTransaction != null) "Edit Transaction" else "New Transaction",
+                text = if (existingTransaction != null) stringResource(R.string.sheet_edit_transaction) else stringResource(R.string.sheet_new_transaction),
                 style = AppTypography.headline3,
                 color = MaterialTheme.appColors.textPrimary
             )
@@ -126,7 +128,7 @@ fun TransactionDetailSheet(
             OutlinedTextField(
                 value = amountStr,
                 onValueChange = { amountStr = it },
-                label = { Text("Amount (₹)", color = MaterialTheme.appColors.textSecondary) },
+                label = { Text(stringResource(R.string.sheet_amount_label), color = MaterialTheme.appColors.textSecondary) },
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.textPrimary),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
@@ -159,7 +161,15 @@ fun TransactionDetailSheet(
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(t.lowercase().replaceFirstChar { it.uppercase() }, style = AppTypography.caption, color = textColor)
+                        Text(
+                            text = when (t) {
+                                "EXPENSE" -> stringResource(R.string.expense)
+                                "INCOME" -> stringResource(R.string.income)
+                                else -> stringResource(R.string.transaction_type_transfer)
+                            },
+                            style = AppTypography.caption,
+                            color = textColor
+                        )
                     }
                 }
             }
@@ -175,7 +185,7 @@ fun TransactionDetailSheet(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.appColors.textPrimary),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.borderLight)
                 ) {
-                    Text(selectedCat?.name ?: "Select category")
+                    Text(selectedCat?.name ?: stringResource(R.string.sheet_select_category))
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -190,7 +200,7 @@ fun TransactionDetailSheet(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.appColors.textPrimary),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.borderLight)
                 ) {
-                    Text(selectedAccount?.name ?: "Select Account")
+                    Text(selectedAccount?.name ?: stringResource(R.string.sheet_select_account))
                 }
                 DropdownMenu(
                     expanded = accountMenuExpanded,
@@ -222,7 +232,7 @@ fun TransactionDetailSheet(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.appColors.textPrimary),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.borderLight)
                     ) {
-                        Text(selectedToAccount?.name ?: "Select To Account")
+                        Text(selectedToAccount?.name ?: stringResource(R.string.sheet_select_to_account))
                     }
                     DropdownMenu(
                         expanded = toAccountMenuExpanded,
@@ -246,7 +256,7 @@ fun TransactionDetailSheet(
             // Optional Details
             var showDetails by remember { mutableStateOf(false) }
             Text(
-                "Optional Details",
+                stringResource(R.string.sheet_optional_details),
                 style = AppTypography.caption,
                 color = MaterialTheme.appColors.primary,
                 modifier = Modifier.clickable { showDetails = !showDetails }
@@ -262,7 +272,7 @@ fun TransactionDetailSheet(
                     OutlinedTextField(
                         value = sdfDate.format(Date(dateMs)),
                         onValueChange = {},
-                        label = { Text("Date") },
+                        label = { Text(stringResource(R.string.sheet_date)) },
                         enabled = false,
                         modifier = Modifier.weight(1f).clickable { /* TODO DatePicker */ }
                     )
@@ -270,7 +280,7 @@ fun TransactionDetailSheet(
                     OutlinedTextField(
                         value = sdfTime.format(Date(dateMs)),
                         onValueChange = {},
-                        label = { Text("Time") },
+                        label = { Text(stringResource(R.string.sheet_time)) },
                         enabled = false,
                         modifier = Modifier.weight(1f).clickable { /* TODO TimePicker */ }
                     )
@@ -281,7 +291,7 @@ fun TransactionDetailSheet(
                 OutlinedTextField(
                     value = note,
                     onValueChange = { if (it.length <= 200) note = it },
-                    label = { Text("Note (Optional)") },
+                    label = { Text(stringResource(R.string.sheet_note_optional)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next)
                 )
@@ -291,7 +301,7 @@ fun TransactionDetailSheet(
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated)") },
+                    label = { Text(stringResource(R.string.sheet_tags)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done)
                 )
@@ -303,33 +313,33 @@ fun TransactionDetailSheet(
                 onClick = {
                     val amount = amountStr.toDoubleOrNull()
                     if (amount == null || amount <= 0) {
-                        Toast.makeText(context, "Amount must be greater than zero", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_amount_invalid), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (type != "TRANSFER" && categoryId.isEmpty()) {
-                        Toast.makeText(context, "Select a category", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_select_category), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (accountId.isEmpty()) {
-                        Toast.makeText(context, "Select an account", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_select_account), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (type == "TRANSFER" && toAccountId.isEmpty()) {
-                        Toast.makeText(context, "Select destination account", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_select_dest_account), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (type == "TRANSFER" && accountId == toAccountId) {
-                        Toast.makeText(context, "Cannot transfer to same account", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_same_account_transfer), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (type == "TRANSFER") {
                         val sourceAccountWithBalance = allAccountsWithBalance.find { it.account.id == accountId }
                         if (sourceAccountWithBalance != null && amount > sourceAccountWithBalance.balance) {
-                            Toast.makeText(context, "Warning: Transfer amount exceeds account balance", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, context.getString(R.string.toast_transfer_exceeds_balance), Toast.LENGTH_LONG).show()
                         }
                     }
                     if (dateMs > System.currentTimeMillis()) {
-                        Toast.makeText(context, "Cannot enter future transactions", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_future_date), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     
@@ -365,14 +375,14 @@ fun TransactionDetailSheet(
                         )
                     }
                     
-                    Toast.makeText(context, "Transaction saved", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_tx_saved), Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
             ) {
-                Text("Save", color = Color.White)
+                Text(stringResource(R.string.action_save), color = Color.White)
             }
         }
     }
@@ -429,12 +439,12 @@ fun TransactionDetailSheet(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "Add New Category",
+                                contentDescription = stringResource(R.string.sheet_add_new_category_desc),
                                 tint = MaterialTheme.appColors.primary
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Add New", style = AppTypography.caption, color = MaterialTheme.appColors.primary, maxLines = 1)
+                        Text(stringResource(R.string.sheet_add_new), style = AppTypography.caption, color = MaterialTheme.appColors.primary, maxLines = 1)
                     }
                 }
             }
@@ -444,13 +454,13 @@ fun TransactionDetailSheet(
     if (showAddCategoryDialog) {
         AlertDialog(
             onDismissRequest = { showAddCategoryDialog = false },
-            title = { Text("Add Custom Category", style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary) },
+            title = { Text(stringResource(R.string.sheet_add_custom_category), style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     OutlinedTextField(
                         value = newCategoryName,
                         onValueChange = { newCategoryName = it },
-                        label = { Text("Category Name") },
+                        label = { Text(stringResource(R.string.sheet_category_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -459,7 +469,7 @@ fun TransactionDetailSheet(
                         )
                     )
 
-                    Text("Select Emoji / Icon", style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
+                    Text(stringResource(R.string.sheet_select_emoji_icon), style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -467,7 +477,7 @@ fun TransactionDetailSheet(
                         OutlinedTextField(
                             value = newCategoryIcon,
                             onValueChange = { if (it.length <= 2) newCategoryIcon = it },
-                            label = { Text("Custom") },
+                            label = { Text(stringResource(R.string.sheet_custom_icon)) },
                             singleLine = true,
                             modifier = Modifier.width(80.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -495,7 +505,7 @@ fun TransactionDetailSheet(
                         }
                     }
 
-                    Text("Select Color", style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
+                    Text(stringResource(R.string.sheet_select_color), style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(6),
                         modifier = Modifier.height(72.dp)
@@ -523,7 +533,7 @@ fun TransactionDetailSheet(
                 TextButton(
                     onClick = {
                         if (newCategoryName.trim().isBlank()) {
-                            Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_name_empty), Toast.LENGTH_SHORT).show()
                             return@TextButton
                         }
                         val finalIcon = newCategoryIcon.ifBlank { newCategoryName.take(1) }
@@ -539,15 +549,15 @@ fun TransactionDetailSheet(
                         categoryId = generatedId
                         showAddCategoryDialog = false
                         newCategoryName = ""
-                        Toast.makeText(context, "Category added", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_category_added), Toast.LENGTH_SHORT).show()
                     }
                 ) {
-                    Text("Add", color = MaterialTheme.appColors.primary)
+                    Text(stringResource(R.string.action_add), color = MaterialTheme.appColors.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddCategoryDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.appColors.textSecondary)
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.appColors.textSecondary)
                 }
             },
             containerColor = MaterialTheme.appColors.bgSurface

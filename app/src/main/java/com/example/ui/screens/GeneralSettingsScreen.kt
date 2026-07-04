@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,9 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.settings.OptionPickerSheet
 import com.example.ui.theme.appColors
@@ -23,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
 import com.example.ui.viewmodel.SettingsViewModel
+import com.example.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +46,7 @@ fun GeneralSettingsScreen(
     val accounts by viewModel.allAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
     val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
 
     val currentAccountName = remember(accounts, defaultAccountId) {
         accounts.find { it.id == defaultAccountId }?.name ?: "Cash"
@@ -80,6 +85,15 @@ fun GeneralSettingsScreen(
                     label = "Theme",
                     value = theme,
                     onClick = { pickerType = PickerType.THEME }
+                )
+                GeneralSettingsRow(
+                    label = stringResource(R.string.settings_language),
+                    value = when (appLanguage) {
+                        "hi" -> "हिन्दी"
+                        "gu" -> "ગુજરાતી"
+                        else -> "English"
+                    },
+                    onClick = { pickerType = PickerType.LANGUAGE }
                 )
                 GeneralSettingsRow(
                     label = "App Icon",
@@ -215,6 +229,26 @@ fun GeneralSettingsScreen(
                 },
                 onDismiss = { pickerType = null }
             )
+            PickerType.LANGUAGE -> OptionPickerSheet(
+                title = stringResource(R.string.settings_language),
+                options = listOf("English", "हिन्दी", "ગુજરાતી"),
+                selectedOption = when (appLanguage) {
+                    "hi" -> "हिन्दी"
+                    "gu" -> "ગુજરાતી"
+                    else -> "English"
+                },
+                onOptionSelected = { selected ->
+                    val code = when (selected) {
+                        "हिन्दी" -> "hi"
+                        "ગુજરાતી" -> "gu"
+                        else -> "en"
+                    }
+                    viewModel.setAppLanguage(code)
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+                    pickerType = null
+                },
+                onDismiss = { pickerType = null }
+            )
             else -> {}
         }
 
@@ -332,5 +366,5 @@ fun GeneralSettingsToggleRow(
 }
 
 enum class PickerType {
-    THEME, FIRST_DAY_OF_WEEK, DATE_FORMAT, TIME_FORMAT, NUMBER_FORMAT, DECIMAL_PLACES, DEFAULT_ACCOUNT
+    THEME, FIRST_DAY_OF_WEEK, DATE_FORMAT, TIME_FORMAT, NUMBER_FORMAT, DECIMAL_PLACES, DEFAULT_ACCOUNT, LANGUAGE
 }

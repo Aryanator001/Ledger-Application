@@ -24,7 +24,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.MaterialTheme
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
@@ -46,7 +48,7 @@ fun SummaryCard(
     ) {
         Column {
             Text(
-                text = "Total Balance",
+                text = stringResource(R.string.summary_total_balance),
                 style = AppTypography.bodySmall,
                 color = Color.White.copy(alpha = 0.8f)
             )
@@ -64,20 +66,20 @@ fun SummaryCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 SummaryItem(
-                    label = "Income",
+                    label = stringResource(R.string.income),
                     amount = totalIncome,
-                    icon = Icons.Default.KeyboardArrowDown, // Money coming in
+                    icon = Icons.Default.KeyboardArrowDown,
                     iconTint = MaterialTheme.appColors.income,
                     currencySymbol = currencySymbol,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 SummaryItem(
-                    label = "Expense",
+                    label = stringResource(R.string.expense),
                     amount = totalExpense,
-                    icon = Icons.Default.KeyboardArrowUp,   // Money going out
+                    icon = Icons.Default.KeyboardArrowUp,
                     iconTint = MaterialTheme.appColors.expense,
                     currencySymbol = currencySymbol,
                     modifier = Modifier.weight(1f)

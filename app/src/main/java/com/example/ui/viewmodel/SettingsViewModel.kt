@@ -66,6 +66,9 @@ class SettingsViewModel(
     val currencySymbol: StateFlow<String> = userPreferences.currencySymbol
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "₹")
 
+    val appLanguage: StateFlow<String> = userPreferences.appLanguage
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
     fun setTheme(value: String) { viewModelScope.launch { userPreferences.setTheme(value) } }
     fun setFirstDayOfWeek(value: String) { viewModelScope.launch { userPreferences.setFirstDayOfWeek(value) } }
     fun setDateFormat(value: String) { viewModelScope.launch { userPreferences.setDateFormat(value) } }
@@ -76,6 +79,7 @@ class SettingsViewModel(
     fun setDefaultAccountId(value: String) { viewModelScope.launch { userPreferences.setDefaultAccountId(value) } }
     fun setAutoCategorise(value: Boolean) { viewModelScope.launch { userPreferences.setAutoCategorise(value) } }
     fun setCurrency(code: String, symbol: String) { viewModelScope.launch { userPreferences.setCurrency(code, symbol) } }
+    fun setAppLanguage(code: String) { viewModelScope.launch { userPreferences.setAppLanguage(code) } }
 }
 
 class SettingsViewModelFactory(

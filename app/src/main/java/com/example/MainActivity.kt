@@ -1,10 +1,13 @@
 package com.example
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
@@ -102,7 +105,7 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
 
 val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
 
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var securityViewModel: SecurityViewModel
     private var isThemeLoaded = false
 
@@ -165,6 +168,7 @@ class MainActivity : FragmentActivity() {
                 "System"
             }
         }
+
 
         // Use explicit SystemBarStyle (not the default auto) so the OnPreDrawListener
         // auto-detector is never installed — otherwise it continuously overrides the
