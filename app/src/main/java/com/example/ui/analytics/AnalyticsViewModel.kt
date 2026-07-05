@@ -217,7 +217,7 @@ class AnalyticsViewModel(
 
             val item = OutstandingItem(
                 id = tx.id,
-                partyName = tx.title.ifBlank { "Unknown" },
+                partyName = tx.title,
                 amountPaise = (tx.amount * 100).roundToLong(),
                 date = tx.date,
                 note = tx.description

@@ -347,4 +347,41 @@
     <string name="readonly_sheet_edit">Edit</string>
     <string name="readonly_sheet_delete">Delete</string>
     <string name="readonly_sheet_unknown">Unknown</string>
+
+    <!-- AnalyticsScreen -->
+    <string name="analytics_range_this_week">This Week</string>
+    <string name="analytics_range_this_month">This Month</string>
+    <string name="analytics_range_last_3_months">Last 3 Months</string>
+    <string name="analytics_range_this_year">This Year</string>
+    <string name="analytics_range_custom">Custom</string>
+    <string name="analytics_unknown">Unknown</string>
+    <string name="analytics_next_btn">Next</string>
+    <string name="analytics_end_date_error">End date must be after start date</string>
+    <string name="analytics_pick_end_date_msg">Now pick the end date</string>
+    <string name="analytics_business_health_title">Business Health</string>
+    <string name="analytics_status_profitable">Profitable</string>
+    <string name="analytics_status_break_even">Break Even</string>
+    <string name="analytics_status_loss">Loss</string>
+    <string name="analytics_total_income">Total Income</string>
+    <string name="analytics_total_expense">Total Expense</string>
+    <string name="analytics_net_profit">Net Profit</string>
+    <string name="analytics_net_loss">Net Loss</string>
+    <string name="analytics_outstanding_balance_title">Outstanding Balance</string>
+    <string name="analytics_no_outstanding_msg">No outstanding entries detected.</string>
+    <string name="analytics_outstanding_hint">Add keywords like \'udhar\', \'baki\', \'receivable\', or \'payable\' in transaction notes to track outstanding amounts.</string>
+    <string name="analytics_receivables_title">Receivables (owed to you)</string>
+    <string name="analytics_payables_title">Payables (you owe)</string>
+    <string name="analytics_ai_insights_title">AI Insights</string>
+    <string name="analytics_generating_insights_msg">Generating insights…</string>
+    <string name="analytics_insights_unavailable_msg">Insights unavailable right now.</string>
+    <string name="analytics_income_expense_trends_title">Income vs Expense Trends</string>
+    <string name="analytics_no_data_period_msg">No data for this period.</string>
+    <string name="analytics_expense_breakdown_title">Expense Breakdown</string>
+    <string name="analytics_no_expenses_period_msg">No expenses for this period.</string>
+    <string name="analytics_transactions_for_template">Transactions for %s</string>
+    <string name="analytics_export_reports_title">Export Reports</string>
+    <string name="analytics_export_csv_btn">Export CSV</string>
+    <string name="analytics_export_pdf_btn">Export PDF</string>
+    <string name="analytics_csv_export_failed_msg">CSV export failed</string>
+    <string name="analytics_pdf_export_failed_msg">PDF export failed</string>
 </resources>

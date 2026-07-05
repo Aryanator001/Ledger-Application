@@ -341,4 +341,41 @@
     <string name="readonly_sheet_edit">એડિટ કરો</string>
     <string name="readonly_sheet_delete">ડિલીટ કરો</string>
     <string name="readonly_sheet_unknown">અજ્ઞાત</string>
+
+    <!-- AnalyticsScreen -->
+    <string name="analytics_range_this_week">આ અઠવાડિયે</string>
+    <string name="analytics_range_this_month">આ મહિને</string>
+    <string name="analytics_range_last_3_months">છેલ્લા 3 મહિના</string>
+    <string name="analytics_range_this_year">આ વર્ષે</string>
+    <string name="analytics_range_custom">કસ્ટમ</string>
+    <string name="analytics_unknown">અજ્ઞાત</string>
+    <string name="analytics_next_btn">આગળ</string>
+    <string name="analytics_end_date_error">અંતિમ તારીખ શરૂઆતની તારીખ પછી હોવી જોઈએ</string>
+    <string name="analytics_pick_end_date_msg">હવે અંતિમ તારીખ પસંદ કરો</string>
+    <string name="analytics_business_health_title">બિઝનેસનું સ્વાસ્થ્ય</string>
+    <string name="analytics_status_profitable">નફામાં</string>
+    <string name="analytics_status_break_even">ના નફો ના ખોટ</string>
+    <string name="analytics_status_loss">ખોટમાં</string>
+    <string name="analytics_total_income">કુલ ઇનકમ</string>
+    <string name="analytics_total_expense">કુલ ખર્ચ</string>
+    <string name="analytics_net_profit">ચોખ્ખો નફો</string>
+    <string name="analytics_net_loss">ચોખ્ખી ખોટ</string>
+    <string name="analytics_outstanding_balance_title">બાકી બેલેન્સ</string>
+    <string name="analytics_no_outstanding_msg">કોઈ બાકી એન્ટ્રી મળી નથી.</string>
+    <string name="analytics_outstanding_hint">\'udhar\', \'baki\', \'receivable\', અથવા \'payable\' જેવા શબ્દો ટ્રાન્ઝેક્શનની નોંધમાં ઉમેરો જેથી બાકી રકમ ટ્રેક થઈ શકે.</string>
+    <string name="analytics_receivables_title">મળવાની રકમ (તમને મળવાનું છે)</string>
+    <string name="analytics_payables_title">આપવાની રકમ (તમારે આપવાનું છે)</string>
+    <string name="analytics_ai_insights_title">AI ઇનસાઇટ્સ</string>
+    <string name="analytics_generating_insights_msg">ઇનસાઇટ્સ બનાવવામાં આવી રહ્યા છે…</string>
+    <string name="analytics_insights_unavailable_msg">અત્યારે ઇનસાઇટ્સ ઉપલબ્ધ નથી.</string>
+    <string name="analytics_income_expense_trends_title">ઇનકમ વિરુદ્ધ ખર્ચ ટ્રેન્ડ્સ</string>
+    <string name="analytics_no_data_period_msg">આ સમયગાળામાં કોઈ ડેટા નથી.</string>
+    <string name="analytics_expense_breakdown_title">ખર્ચની વિગતો</string>
+    <string name="analytics_no_expenses_period_msg">આ સમયગાળામાં કોઈ ખર્ચ નથી.</string>
+    <string name="analytics_transactions_for_template">%s માટે ટ્રાન્ઝેક્શન</string>
+    <string name="analytics_export_reports_title">રિપોર્ટ એક્સપોર્ટ કરો</string>
+    <string name="analytics_export_csv_btn">CSV એક્સપોર્ટ કરો</string>
+    <string name="analytics_export_pdf_btn">PDF એક્સપોર્ટ કરો</string>
+    <string name="analytics_csv_export_failed_msg">CSV એક્સપોર્ટ થઈ શક્યું નહીં</string>
+    <string name="analytics_pdf_export_failed_msg">PDF એક્સપોર્ટ થઈ શક્યું નહીં</string>
 </resources>
