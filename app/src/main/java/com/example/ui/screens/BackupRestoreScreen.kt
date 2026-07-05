@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
@@ -35,13 +37,21 @@ fun BackupRestoreScreen(
     val coroutineScope = rememberCoroutineScope()
     var showClearDataDialog by remember { mutableStateOf(false) }
 
+    // Pre-compute snackbar strings for use inside lambdas
+    val jsonExportMsg = stringResource(R.string.backup_restore_exporting_json_msg)
+    val csvExportMsg = stringResource(R.string.backup_restore_exporting_csv_msg)
+    val requiresProMsg = stringResource(R.string.backup_restore_requires_pro_msg)
+    val selectingFileMsg = stringResource(R.string.backup_restore_selecting_file_msg)
+    val selectingCsvMsg = stringResource(R.string.backup_restore_selecting_csv_msg)
+    val dataDeletedMsg = stringResource(R.string.backup_restore_deleted_msg)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Backup & Restore", style = AppTypography.display.copy(fontSize = 20.sp)) },
+                title = { Text(stringResource(R.string.backup_restore_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.backup_restore_back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -65,7 +75,7 @@ fun BackupRestoreScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // SECTION: "Backup"
-            SettingsSectionHeader("Backup")
+            SettingsSectionHeader(stringResource(R.string.backup_restore_section_backup))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -76,32 +86,32 @@ fun BackupRestoreScreen(
                 Column {
                     BackupRestoreItem(
                         icon = Icons.Default.Save,
-                        title = "Export all data",
-                        subtitle = "Download a full backup as a JSON file",
+                        title = stringResource(R.string.backup_restore_export_all_title),
+                        subtitle = stringResource(R.string.backup_restore_export_all_sub),
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Generating JSON export...")
+                                snackbarHostState.showSnackbar(jsonExportMsg)
                             }
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
-                    
+
                     BackupRestoreItem(
                         icon = Icons.Default.Description,
-                        title = "Export transactions as CSV",
-                        subtitle = "Compatible with Excel and Google Sheets",
+                        title = stringResource(R.string.backup_restore_export_csv_title),
+                        subtitle = stringResource(R.string.backup_restore_export_csv_sub),
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Generating CSV export...")
+                                snackbarHostState.showSnackbar(csvExportMsg)
                             }
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
-                    
+
                     BackupRestoreItem(
                         icon = Icons.Default.Update,
-                        title = "Last backup date",
-                        subtitle = "Never",
+                        title = stringResource(R.string.backup_restore_last_backup_title),
+                        subtitle = stringResource(R.string.backup_restore_never),
                         showDisclosure = false,
                         onClick = {}
                     )
@@ -111,7 +121,7 @@ fun BackupRestoreScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // SECTION: "Cloud backup" (Pro feature)
-            SettingsSectionHeader("Cloud backup")
+            SettingsSectionHeader(stringResource(R.string.backup_restore_section_cloud))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -122,12 +132,12 @@ fun BackupRestoreScreen(
                 Column {
                     BackupRestoreItem(
                         icon = Icons.Default.CloudUpload,
-                        title = "Google Drive backup",
-                        subtitle = "Auto backup to cloud",
-                        badge = "Pro",
+                        title = stringResource(R.string.backup_restore_gdrive_backup_title),
+                        subtitle = stringResource(R.string.backup_restore_gdrive_backup_sub),
+                        badge = stringResource(R.string.backup_restore_badge_pro),
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Requires Pro Version")
+                                snackbarHostState.showSnackbar(requiresProMsg)
                             }
                         }
                     )
@@ -137,7 +147,7 @@ fun BackupRestoreScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // SECTION: "Restore"
-            SettingsSectionHeader("Restore")
+            SettingsSectionHeader(stringResource(R.string.backup_restore_section_restore))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -148,23 +158,23 @@ fun BackupRestoreScreen(
                 Column {
                     BackupRestoreItem(
                         icon = Icons.Default.SettingsBackupRestore,
-                        title = "Restore from backup",
-                        subtitle = "Import a .json backup file",
+                        title = stringResource(R.string.backup_restore_restore_backup_title),
+                        subtitle = stringResource(R.string.backup_restore_restore_backup_sub),
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Selecting file...")
+                                snackbarHostState.showSnackbar(selectingFileMsg)
                             }
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
-                    
+
                     BackupRestoreItem(
                         icon = Icons.Default.FileUpload,
-                        title = "Import from CSV",
-                        subtitle = "Import basic CSV from other apps",
+                        title = stringResource(R.string.backup_restore_import_csv_title),
+                        subtitle = stringResource(R.string.backup_restore_import_csv_sub),
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Selecting CSV...")
+                                snackbarHostState.showSnackbar(selectingCsvMsg)
                             }
                         }
                     )
@@ -174,7 +184,7 @@ fun BackupRestoreScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // SECTION: "Danger zone"
-            SettingsSectionHeader("Danger zone", color = MaterialTheme.appColors.expense)
+            SettingsSectionHeader(stringResource(R.string.backup_restore_section_danger), color = MaterialTheme.appColors.expense)
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -186,9 +196,9 @@ fun BackupRestoreScreen(
                     BackupRestoreItem(
                         icon = Icons.Default.DeleteForever,
                         iconColor = MaterialTheme.appColors.expense,
-                        title = "Clear all data",
+                        title = stringResource(R.string.backup_restore_clear_all_title),
                         titleColor = MaterialTheme.appColors.expense,
-                        subtitle = "Permanently delete everything",
+                        subtitle = stringResource(R.string.backup_restore_clear_all_sub),
                         onClick = { showClearDataDialog = true }
                     )
                 }
@@ -200,17 +210,17 @@ fun BackupRestoreScreen(
         var deleteText by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showClearDataDialog = false },
-            title = { Text("Delete everything?", style = AppTypography.display.copy(fontSize = 20.sp)) },
+            title = { Text(stringResource(R.string.backup_restore_delete_confirm_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
             text = {
                 Column {
                     Text(
-                        text = "This will permanently delete all your transactions, accounts, and settings. This cannot be undone.",
+                        text = stringResource(R.string.backup_restore_delete_confirm_msg),
                         style = AppTypography.bodyRegular,
                         color = MaterialTheme.appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Type 'DELETE' to confirm:",
+                        text = stringResource(R.string.backup_restore_delete_instruction),
                         style = AppTypography.bodySmall,
                         color = MaterialTheme.appColors.textTertiary
                     )
@@ -228,19 +238,19 @@ fun BackupRestoreScreen(
                     onClick = {
                         // TODO: Implement deletion
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Data deleted (Not fully implemented)")
+                            snackbarHostState.showSnackbar(dataDeletedMsg)
                         }
                         showClearDataDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.expense),
                     enabled = deleteText == "DELETE"
                 ) {
-                    Text("Clear Data")
+                    Text(stringResource(R.string.backup_restore_delete_confirm_btn))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDataDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.appColors.textPrimary)
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.appColors.textPrimary)
                 }
             },
             containerColor = MaterialTheme.appColors.bgSurface

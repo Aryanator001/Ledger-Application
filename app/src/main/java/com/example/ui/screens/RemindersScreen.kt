@@ -17,11 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
@@ -35,30 +36,40 @@ fun RemindersScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    val openingPickerMsg = stringResource(R.string.reminders_opening_picker_msg)
+    val openingDayPickerMsg = stringResource(R.string.reminders_opening_day_picker_msg)
+    val proPreviewMsg = stringResource(R.string.reminders_pro_preview_msg)
+    val badgeLite = stringResource(R.string.reminders_badge_lite)
+    val badgePro = stringResource(R.string.reminders_badge_pro)
+    val defaultTime = stringResource(R.string.reminders_default_time)
+    val defaultSummaryDay = stringResource(R.string.reminders_default_summary_day)
+    val defaultThreshold = stringResource(R.string.reminders_default_threshold)
+
     var isDailyReminderOn by remember { mutableStateOf(false) }
-    var dailyReminderTime by remember { mutableStateOf("9:00 PM") }
+    var dailyReminderTime by remember(defaultTime) { mutableStateOf(defaultTime) }
 
     var isBudgetAlertsOn by remember { mutableStateOf(false) }
     var isMonthlySummaryOn by remember { mutableStateOf(false) }
-    var monthlySummaryDay by remember { mutableStateOf("1st of month") }
+    var monthlySummaryDay by remember(defaultSummaryDay) { mutableStateOf(defaultSummaryDay) }
 
     var isLowBalanceWarningOn by remember { mutableStateOf(false) }
-    var lowBalanceThreshold by remember { mutableStateOf("1000") }
+    var lowBalanceThreshold by remember(defaultThreshold) { mutableStateOf(defaultThreshold) }
 
     var showCreateSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Reminders", style = AppTypography.display.copy(fontSize = 20.sp)) },
+                title = { Text(stringResource(R.string.reminders_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.reminders_back_desc))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showCreateSheet = true }) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add reminder")
+                        Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.reminders_add_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -82,7 +93,7 @@ fun RemindersScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // SECTION: Daily reminder
-            SettingsSectionHeader("Daily reminder")
+            SettingsSectionHeader(stringResource(R.string.reminders_section_daily))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -91,17 +102,17 @@ fun RemindersScreen(
                 Column {
                     ReminderToggleItem(
                         icon = Icons.Default.Event,
-                        title = "Daily expense reminder",
+                        title = stringResource(R.string.reminders_daily_expense_title),
                         isChecked = isDailyReminderOn,
                         onCheckedChange = { isDailyReminderOn = it }
                     )
                     if (isDailyReminderOn) {
                         HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
                         ReminderClickItem(
-                            title = "Reminder time",
+                            title = stringResource(R.string.reminders_time_title),
                             rightLabel = dailyReminderTime,
                             onClick = {
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Opening time picker...") }
+                                coroutineScope.launch { snackbarHostState.showSnackbar(openingPickerMsg) }
                             }
                         )
                     }
@@ -111,7 +122,7 @@ fun RemindersScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // SECTION: Budget alerts
-            SettingsSectionHeader("Budget alerts")
+            SettingsSectionHeader(stringResource(R.string.reminders_section_budget))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -120,24 +131,24 @@ fun RemindersScreen(
                 Column {
                     ReminderToggleItem(
                         icon = Icons.Default.Warning,
-                        title = "Budget threshold alerts",
+                        title = stringResource(R.string.reminders_budget_threshold_title),
                         isChecked = isBudgetAlertsOn,
                         onCheckedChange = { isBudgetAlertsOn = it }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
                     ReminderToggleItem(
                         icon = Icons.Default.PieChart,
-                        title = "Monthly budget summary",
+                        title = stringResource(R.string.reminders_monthly_summary_title),
                         isChecked = isMonthlySummaryOn,
                         onCheckedChange = { isMonthlySummaryOn = it }
                     )
                     if (isMonthlySummaryOn) {
                         HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
                         ReminderClickItem(
-                            title = "Summary day",
+                            title = stringResource(R.string.reminders_summary_day_title),
                             rightLabel = monthlySummaryDay,
                             onClick = {
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Opening day picker...") }
+                                coroutineScope.launch { snackbarHostState.showSnackbar(openingDayPickerMsg) }
                             }
                         )
                     }
@@ -147,7 +158,7 @@ fun RemindersScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // SECTION: Smart reminders
-            SettingsSectionHeader("Smart reminders")
+            SettingsSectionHeader(stringResource(R.string.reminders_section_smart))
             Card(
                 shape = AppShapes.xl,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -156,21 +167,21 @@ fun RemindersScreen(
                 Column {
                     ReminderRouteItem(
                         icon = Icons.Default.Autorenew,
-                        title = "Recurring bill reminders",
-                        subtitle = "Notify before recurring bills are due",
-                        badge = "Lite",
+                        title = stringResource(R.string.reminders_recurring_bill_title),
+                        subtitle = stringResource(R.string.reminders_recurring_bill_sub),
+                        badge = badgeLite,
                         onClick = onNavigateToRecurring
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
                     ReminderToggleItem(
                         icon = Icons.Default.AccountBalanceWallet,
-                        title = "Low balance warning",
-                        badge = "Pro",
+                        title = stringResource(R.string.reminders_low_balance_title),
+                        badge = badgePro,
                         isChecked = isLowBalanceWarningOn,
-                        onCheckedChange = { 
+                        onCheckedChange = {
                             isLowBalanceWarningOn = it
                             if (it) {
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Pro view unlocked for preview") }
+                                coroutineScope.launch { snackbarHostState.showSnackbar(proPreviewMsg) }
                             }
                         }
                     )
@@ -180,7 +191,7 @@ fun RemindersScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
-                            Text("Threshold", modifier = Modifier.weight(1f), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
+                            Text(stringResource(R.string.reminders_threshold_label), modifier = Modifier.weight(1f), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
                             OutlinedTextField(
                                 value = lowBalanceThreshold,
                                 onValueChange = { lowBalanceThreshold = it },

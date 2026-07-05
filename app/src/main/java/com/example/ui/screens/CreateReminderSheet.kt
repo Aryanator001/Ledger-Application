@@ -12,6 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppTypography
 
@@ -22,12 +24,17 @@ fun CreateReminderSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
+    val defaultFrequency = stringResource(R.string.create_reminder_default_frequency)
+    val defaultDay = stringResource(R.string.create_reminder_default_day)
+    val defaultTime = stringResource(R.string.create_reminder_default_time)
+    val cashLabel = stringResource(R.string.account_cash)
+
     var label by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-    var frequency by remember { mutableStateOf("Monthly") }
-    var day by remember { mutableStateOf("1st") }
-    var time by remember { mutableStateOf("9:00 AM") }
-    var account by remember { mutableStateOf("Cash") }
+    var frequency by remember(defaultFrequency) { mutableStateOf(defaultFrequency) }
+    var day by remember(defaultDay) { mutableStateOf(defaultDay) }
+    var time by remember(defaultTime) { mutableStateOf(defaultTime) }
+    var account by remember(cashLabel) { mutableStateOf(cashLabel) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -42,7 +49,7 @@ fun CreateReminderSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "New Reminder",
+                text = stringResource(R.string.create_reminder_title),
                 style = AppTypography.display.copy(fontSize = 24.sp),
                 color = MaterialTheme.appColors.textPrimary,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -51,7 +58,7 @@ fun CreateReminderSheet(
             OutlinedTextField(
                 value = label,
                 onValueChange = { label = it },
-                label = { Text("Label (e.g. Electricity bill)", color = MaterialTheme.appColors.textSecondary) },
+                label = { Text(stringResource(R.string.create_reminder_label_field), color = MaterialTheme.appColors.textSecondary) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -64,7 +71,7 @@ fun CreateReminderSheet(
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = { Text("Amount (optional)", color = MaterialTheme.appColors.textSecondary) },
+                label = { Text(stringResource(R.string.create_reminder_amount_field), color = MaterialTheme.appColors.textSecondary) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
@@ -79,7 +86,7 @@ fun CreateReminderSheet(
                 OutlinedTextField(
                     value = frequency,
                     onValueChange = {},
-                    label = { Text("Frequency", color = MaterialTheme.appColors.textSecondary) },
+                    label = { Text(stringResource(R.string.create_reminder_frequency_field), color = MaterialTheme.appColors.textSecondary) },
                     modifier = Modifier.weight(1f),
                     readOnly = true,
                     textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
@@ -92,7 +99,7 @@ fun CreateReminderSheet(
                 OutlinedTextField(
                     value = day,
                     onValueChange = {},
-                    label = { Text("Day", color = MaterialTheme.appColors.textSecondary) },
+                    label = { Text(stringResource(R.string.create_reminder_day_field), color = MaterialTheme.appColors.textSecondary) },
                     modifier = Modifier.weight(1f),
                     readOnly = true,
                     textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
@@ -108,7 +115,7 @@ fun CreateReminderSheet(
                 OutlinedTextField(
                     value = time,
                     onValueChange = {},
-                    label = { Text("Time", color = MaterialTheme.appColors.textSecondary) },
+                    label = { Text(stringResource(R.string.create_reminder_time_field), color = MaterialTheme.appColors.textSecondary) },
                     modifier = Modifier.weight(1f),
                     readOnly = true,
                     textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
@@ -121,7 +128,7 @@ fun CreateReminderSheet(
                 OutlinedTextField(
                     value = account,
                     onValueChange = {},
-                    label = { Text("Account (optional)", color = MaterialTheme.appColors.textSecondary) },
+                    label = { Text(stringResource(R.string.create_reminder_account_field), color = MaterialTheme.appColors.textSecondary) },
                     modifier = Modifier.weight(1f),
                     readOnly = true,
                     textStyle = AppTypography.bodyRegular.copy(color = MaterialTheme.appColors.textPrimary),
@@ -139,7 +146,7 @@ fun CreateReminderSheet(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
             ) {
-                Text("Save Reminder", color = Color.White, style = AppTypography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.create_reminder_save_btn), color = Color.White, style = AppTypography.bodyLarge, fontWeight = FontWeight.Bold)
             }
         }
     }

@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
@@ -37,13 +39,20 @@ fun RecurringRemindersListScreen(
 ) {
     var showCreateSheet by remember { mutableStateOf(false) }
 
+    val mockElectricity = stringResource(R.string.recurring_reminders_mock_electricity)
+    val mockInternet = stringResource(R.string.recurring_reminders_mock_internet)
+    val mockCc = stringResource(R.string.recurring_reminders_mock_cc)
+    val mockTime1 = stringResource(R.string.recurring_reminders_mock_time1)
+    val mockTime2 = stringResource(R.string.recurring_reminders_mock_time2)
+    val mockTime3 = stringResource(R.string.recurring_reminders_mock_time3)
+
     // Mock data for the list
-    var items by remember {
+    var items by remember(mockElectricity, mockInternet, mockCc, mockTime1, mockTime2, mockTime3) {
         mutableStateOf(
             listOf(
-                ReminderItem("1", "Electricity bill", "Monthly, 1st - 9:00 AM", true),
-                ReminderItem("2", "Internet bill", "Monthly, 15th - 10:00 AM", true),
-                ReminderItem("3", "Credit card payment", "Monthly, 28th - 8:00 AM", false)
+                ReminderItem("1", mockElectricity, mockTime1, true),
+                ReminderItem("2", mockInternet, mockTime2, true),
+                ReminderItem("3", mockCc, mockTime3, false)
             )
         )
     }
@@ -51,15 +60,15 @@ fun RecurringRemindersListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recurring Reminders", style = AppTypography.display.copy(fontSize = 20.sp)) },
+                title = { Text(stringResource(R.string.recurring_reminders_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.recurring_reminders_back_desc))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showCreateSheet = true }) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add reminder")
+                        Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.recurring_reminders_add_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -99,7 +108,7 @@ fun RecurringRemindersListScreen(
                 item {
                     Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = "No active reminders",
+                            text = stringResource(R.string.recurring_reminders_empty_msg),
                             style = AppTypography.bodyRegular,
                             color = MaterialTheme.appColors.textTertiary
                         )
@@ -150,7 +159,7 @@ fun ReminderListItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.recurring_reminders_delete_desc),
                     tint = Color.White
                 )
             }

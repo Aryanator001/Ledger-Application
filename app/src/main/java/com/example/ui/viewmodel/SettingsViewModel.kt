@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import android.widget.Toast
+import com.example.R
 
 class SettingsViewModel(
     application: Application,
@@ -23,9 +24,9 @@ class SettingsViewModel(
             try {
                 getApplication<Application>().cacheDir.deleteRecursively()
                 getApplication<Application>().externalCacheDir?.deleteRecursively()
-                Toast.makeText(getApplication(), "Cache cleared", Toast.LENGTH_SHORT).show()
+                Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.settings_cache_cleared), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(getApplication(), "Failed to clear cache: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.settings_cache_clear_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
             }
         }
     }

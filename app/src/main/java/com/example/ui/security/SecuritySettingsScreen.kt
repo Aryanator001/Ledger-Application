@@ -14,8 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import com.example.R
 import com.example.data.security.BiometricAuthenticator
 import com.example.data.security.BiometricStatus
 import com.example.ui.theme.appColors
@@ -44,16 +46,36 @@ fun SecuritySettingsScreen(
     var showLockAfterDialog by remember { mutableStateOf(false) }
     var showLockMethodDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    
+
     val auth = remember { BiometricAuthenticator(activity) }
+
+    // Pre-compute localized strings for use inside lambdas
+    val enableLockTitle = stringResource(R.string.security_settings_enable_app_lock_title)
+    val disableLockTitle = stringResource(R.string.security_settings_disable_app_lock_title)
+    val biometricsToast = stringResource(R.string.security_settings_biometrics_toast)
+    val lockMethodBiometrics = stringResource(R.string.security_settings_lock_method_biometrics)
+    val lockMethodPin = stringResource(R.string.security_settings_lock_method_pin)
+    val lockAfterImmediately = stringResource(R.string.security_settings_lock_after_immediately)
+    val lockAfter1Min = stringResource(R.string.security_settings_lock_after_1_min)
+    val lockAfter5Min = stringResource(R.string.security_settings_lock_after_5_min)
+    val lockAfter15Min = stringResource(R.string.security_settings_lock_after_15_min)
+    val lockAfterNever = stringResource(R.string.security_settings_lock_after_never)
+    val lockAfterLabel = when (lockAfterMs) {
+        0L -> lockAfterImmediately
+        60_000L -> lockAfter1Min
+        300_000L -> lockAfter5Min
+        900_000L -> lockAfter15Min
+        -1L -> lockAfterNever
+        else -> lockAfterImmediately
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Security Settings", style = AppTypography.headline3) },
+                title = { Text(stringResource(R.string.security_settings_header), style = AppTypography.headline3) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.security_settings_back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -73,19 +95,19 @@ fun SecuritySettingsScreen(
                 .padding(bottom = 32.dp)
         ) {
             // APP LOCK SECTION
-            SettingsSection("App Lock") {
+            SettingsSection(stringResource(R.string.security_settings_section_app_lock)) {
                 ToggleRow(
-                    label = "App lock",
+                    label = stringResource(R.string.security_settings_app_lock_label),
                     checked = appLockEnabled,
                     onToggle = { enabled ->
                         if (enabled) {
                             if (auth.canAuthenticate() != BiometricStatus.AVAILABLE && lockMethod == "BIOMETRICS") {
-                                Toast.makeText(context, "Set up biometrics in device settings first", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, biometricsToast, Toast.LENGTH_SHORT).show()
                                 return@ToggleRow
                             }
                             if (lockMethod == "BIOMETRICS") {
                                 auth.authenticate(
-                                    title = "Enable App Lock",
+                                    title = enableLockTitle,
                                     onSuccess = { viewModel.toggleAppLock(true) },
                                     onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                                 )
@@ -99,7 +121,7 @@ fun SecuritySettingsScreen(
                         } else {
                             if (lockMethod == "BIOMETRICS") {
                                 auth.authenticate(
-                                    title = "Disable App Lock",
+                                    title = disableLockTitle,
                                     onSuccess = { viewModel.toggleAppLock(false) },
                                     onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                                 )
@@ -109,20 +131,23 @@ fun SecuritySettingsScreen(
                         }
                     }
                 )
-                
+
                 HorizontalDivider(
                     color = MaterialTheme.appColors.borderLight,
                     thickness = 0.5.dp,
                     modifier = Modifier.padding(start = 16.dp)
                 )
-                
+
                 ClickRow(
-                    label = "Lock method",
-                    value = lockMethod,
+                    label = stringResource(R.string.security_settings_lock_method_label),
+                    value = when (lockMethod) {
+                        "BIOMETRICS" -> lockMethodBiometrics
+                        else -> lockMethodPin
+                    },
                     enabled = appLockEnabled,
                     onClick = { showLockMethodDialog = true }
                 )
-                
+
                 if (appLockEnabled) {
                     HorizontalDivider(
                         color = MaterialTheme.appColors.borderLight,
@@ -131,20 +156,20 @@ fun SecuritySettingsScreen(
                     )
                     if (lockMethod == "BIOMETRICS") {
                         ToggleRow(
-                            label = "Biometrics",
+                            label = stringResource(R.string.security_settings_biometrics_label),
                             checked = biometricsEnabled,
                             onToggle = { viewModel.toggleBiometrics(it) }
                         )
                     } else {
                         if (hasPin) {
                             ClickRow(
-                                label = "Change PIN",
+                                label = stringResource(R.string.security_settings_change_pin_label),
                                 value = "",
                                 onClick = onNavigateToChangePin
                             )
                         } else {
                             ClickRow(
-                                label = "Set PIN",
+                                label = stringResource(R.string.security_settings_set_pin_label),
                                 value = "",
                                 onClick = onNavigateToSetPin
                             )
@@ -154,10 +179,10 @@ fun SecuritySettingsScreen(
             }
 
             // LOCK BEHAVIOUR SECTION
-            SettingsSection("Lock Behaviour") {
+            SettingsSection(stringResource(R.string.security_settings_section_lock_behaviour)) {
                 ClickRow(
-                    label = "Lock after",
-                    value = lockAfterMsToLabel(lockAfterMs),
+                    label = stringResource(R.string.security_settings_lock_after_label),
+                    value = lockAfterLabel,
                     enabled = appLockEnabled,
                     onClick = { showLockAfterDialog = true }
                 )
@@ -167,7 +192,7 @@ fun SecuritySettingsScreen(
                     modifier = Modifier.padding(start = 16.dp)
                 )
                 ToggleRow(
-                    label = "Require unlock on launch",
+                    label = stringResource(R.string.security_settings_require_unlock_label),
                     checked = requireUnlock,
                     enabled = appLockEnabled,
                     onToggle = { viewModel.toggleRequireUnlockOnLaunch(it) }
@@ -178,7 +203,7 @@ fun SecuritySettingsScreen(
                     modifier = Modifier.padding(start = 16.dp)
                 )
                 ToggleRow(
-                    label = "Hide balance when locked",
+                    label = stringResource(R.string.security_settings_hide_balance_label),
                     checked = hideBalance,
                     enabled = appLockEnabled,
                     onToggle = { viewModel.toggleHideBalanceWhenLocked(it) }
@@ -186,9 +211,9 @@ fun SecuritySettingsScreen(
             }
 
             // PRIVACY SECTION
-            SettingsSection("Privacy") {
+            SettingsSection(stringResource(R.string.security_settings_section_privacy)) {
                 ToggleRow(
-                    label = "Hide preview in app switcher",
+                    label = stringResource(R.string.security_settings_hide_preview_label),
                     checked = hidePreview,
                     onToggle = { viewModel.toggleHidePreviewInSwitcher(it) }
                 )
@@ -198,7 +223,7 @@ fun SecuritySettingsScreen(
                     modifier = Modifier.padding(start = 16.dp)
                 )
                 ToggleRow(
-                    label = "Screenshot protection",
+                    label = stringResource(R.string.security_settings_screenshot_protection_label),
                     checked = screenshotProtection,
                     onToggle = { viewModel.toggleScreenshotProtection(it) }
                 )
@@ -330,10 +355,16 @@ fun ClickRow(
 fun LockAfterDialog(current: Long, onSelect: (Long) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Lock after", style = AppTypography.headline3) },
+        title = { Text(stringResource(R.string.security_settings_lock_after_label), style = AppTypography.headline3) },
         text = {
             Column {
-                listOf(0L to "Immediately", 60_000L to "1 minute", 300_000L to "5 minutes", 900_000L to "15 minutes", -1L to "Never").forEach { (ms, label) ->
+                listOf(
+                    0L to stringResource(R.string.security_settings_lock_after_immediately),
+                    60_000L to stringResource(R.string.security_settings_lock_after_1_min),
+                    300_000L to stringResource(R.string.security_settings_lock_after_5_min),
+                    900_000L to stringResource(R.string.security_settings_lock_after_15_min),
+                    -1L to stringResource(R.string.security_settings_lock_after_never)
+                ).forEach { (ms, label) ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -361,7 +392,7 @@ fun LockAfterDialog(current: Long, onSelect: (Long) -> Unit, onDismiss: () -> Un
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = AppTypography.bodyRegular, color = MaterialTheme.appColors.primary)
+                Text(stringResource(R.string.action_cancel), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.primary)
             }
         },
         containerColor = MaterialTheme.appColors.bgSurface,
@@ -374,27 +405,30 @@ fun LockAfterDialog(current: Long, onSelect: (Long) -> Unit, onDismiss: () -> Un
 fun LockMethodDialog(current: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Lock method", style = AppTypography.headline3) },
+        title = { Text(stringResource(R.string.security_settings_lock_method_label), style = AppTypography.headline3) },
         text = {
             Column {
-                listOf("BIOMETRICS", "PIN").forEach { method ->
+                listOf(
+                    "BIOMETRICS" to stringResource(R.string.security_settings_lock_method_biometrics),
+                    "PIN" to stringResource(R.string.security_settings_lock_method_pin)
+                ).forEach { (code, label) ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(method) }
+                            .clickable { onSelect(code) }
                             .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = method == current,
-                            onClick = { onSelect(method) },
+                            selected = code == current,
+                            onClick = { onSelect(code) },
                             colors = RadioButtonDefaults.colors(
                                 selectedColor = MaterialTheme.appColors.primary,
                                 unselectedColor = MaterialTheme.appColors.textTertiary
                             )
                         )
                         Text(
-                            text = method,
+                            text = label,
                             style = AppTypography.bodyRegular,
                             color = MaterialTheme.appColors.textPrimary,
                             modifier = Modifier.padding(start = 12.dp)
@@ -405,20 +439,11 @@ fun LockMethodDialog(current: String, onSelect: (String) -> Unit, onDismiss: () 
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = AppTypography.bodyRegular, color = MaterialTheme.appColors.primary)
+                Text(stringResource(R.string.action_cancel), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.primary)
             }
         },
         containerColor = MaterialTheme.appColors.bgSurface,
         titleContentColor = MaterialTheme.appColors.textPrimary,
         textContentColor = MaterialTheme.appColors.textPrimary
     )
-}
-
-private fun lockAfterMsToLabel(ms: Long): String = when (ms) {
-    0L -> "Immediately"
-    60_000L -> "1 minute"
-    300_000L -> "5 minutes"
-    900_000L -> "15 minutes"
-    -1L -> "Never"
-    else -> "Immediately"
 }

@@ -26,7 +26,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.AppShapes
@@ -77,7 +79,7 @@ fun CurrencyPickerScreen(
     fun selectCurrency(currency: CurrencyData) {
         viewModel.setCurrency(currency.code, currency.symbol)
         scope.launch {
-            snackbarHostState.showSnackbar("Currency updated to ${currency.code}")
+            snackbarHostState.showSnackbar(context.getString(R.string.currency_picker_updated_msg, currency.code))
         }
     }
 
@@ -85,10 +87,10 @@ fun CurrencyPickerScreen(
         topBar = {
             Column {
                 CenterAlignedTopAppBar(
-                    title = { Text("Change Currency", style = AppTypography.headline3) },
+                    title = { Text(stringResource(R.string.currency_picker_title), style = AppTypography.headline3) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.currency_picker_back_desc))
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -109,7 +111,7 @@ fun CurrencyPickerScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.currency_picker_search_desc),
                             tint = MaterialTheme.appColors.textTertiary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -117,7 +119,7 @@ fun CurrencyPickerScreen(
                         Box(modifier = Modifier.weight(1f)) {
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    "Search currency or country...",
+                                    stringResource(R.string.currency_picker_search_placeholder),
                                     style = AppTypography.bodyRegular,
                                     color = MaterialTheme.appColors.textTertiary
                                 )
@@ -134,7 +136,7 @@ fun CurrencyPickerScreen(
                         if (searchQuery.isNotEmpty()) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Clear",
+                                contentDescription = stringResource(R.string.currency_picker_clear_desc),
                                 tint = MaterialTheme.appColors.textSecondary,
                                 modifier = Modifier
                                     .size(20.dp)
@@ -157,7 +159,7 @@ fun CurrencyPickerScreen(
                 item {
                     Column(modifier = Modifier.padding(vertical = 16.dp)) {
                         Text(
-                            text = "MOST USED",
+                            text = stringResource(R.string.currency_picker_most_used),
                             style = AppTypography.caption,
                             color = MaterialTheme.appColors.textTertiary,
                             modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
@@ -245,7 +247,7 @@ fun CurrencyPickerScreen(
                     if (isSelected) {
                         Icon(
                             Icons.Default.Check,
-                            contentDescription = "Selected",
+                            contentDescription = stringResource(R.string.currency_picker_selected_desc),
                             tint = MaterialTheme.appColors.primary,
                             modifier = Modifier.size(24.dp)
                         )
