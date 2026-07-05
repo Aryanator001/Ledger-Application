@@ -378,4 +378,10 @@
     <string name="analytics_export_pdf_btn">PDF एक्सपोर्ट करें</string>
     <string name="analytics_csv_export_failed_msg">CSV एक्सपोर्ट नहीं हो सका</string>
     <string name="analytics_pdf_export_failed_msg">PDF एक्सपोर्ट नहीं हो सका</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_dashboard">डैशबोर्ड</string>
+    <string name="nav_transactions">ट्रांज़ैक्शन</string>
+    <string name="nav_analytics">एनालिटिक्स</string>
+    <string name="nav_settings">सेटिंग्स</string>
 </resources>

@@ -384,4 +384,10 @@
     <string name="analytics_export_pdf_btn">Export PDF</string>
     <string name="analytics_csv_export_failed_msg">CSV export failed</string>
     <string name="analytics_pdf_export_failed_msg">PDF export failed</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_settings">Settings</string>
 </resources>

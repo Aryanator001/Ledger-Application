@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.LocalActivity
@@ -316,9 +317,16 @@ fun MainScreen(
                 ) {
                     bottomNavItems.forEach { screen ->
                         val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        val navLabel = when (screen) {
+                            Route.Home         -> stringResource(R.string.nav_dashboard)
+                            Route.Transactions -> stringResource(R.string.nav_transactions)
+                            Route.Analytics    -> stringResource(R.string.nav_analytics)
+                            Route.Settings     -> stringResource(R.string.nav_settings)
+                            else               -> screen.title
+                        }
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.title) },
-                            label = { Text(screen.title, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                            label = { Text(navLabel, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                             selected = isSelected,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.appColors.tabActive,
