@@ -306,4 +306,45 @@
     <string name="month_november">November</string>
     <string name="month_december">December</string>
     <string name="account_selector_all_accounts">All Accounts</string>
+
+    <!-- TransactionsScreen -->
+    <string name="transactions_filter_all">All</string>
+    <string name="transactions_search_placeholder">Search title, note, or tag</string>
+    <string name="transactions_sort_date">Date ↓</string>
+    <string name="transactions_column_name_notes">Name · Notes</string>
+    <string name="transactions_no_matches_query">No matches for \'%s\'</string>
+    <string name="transactions_add_first">Add your first transaction</string>
+    <string name="transactions_add_btn">Add Transaction</string>
+    <string name="transactions_no_matches_filter">No transactions match</string>
+    <string name="transactions_clear_filters">Clear filters</string>
+    <string name="transactions_status_deleted">Deleted</string>
+    <string name="transactions_status_archived">Archived</string>
+    <string name="transactions_archived_count">Archived (%d)</string>
+    <string name="transactions_filter_by_account">Filter by Account</string>
+    <string name="transactions_all_accounts">All accounts</string>
+    <string name="transactions_filters_title">Filters</string>
+    <string name="transactions_date_range">Date Range</string>
+    <string name="transactions_range_today">Today</string>
+    <string name="transactions_range_week">Week</string>
+    <string name="transactions_range_month">Month</string>
+    <string name="transactions_range_custom">Custom</string>
+    <string name="transactions_type_label">Type</string>
+    <string name="transactions_type_transfer">Transfer</string>
+    <string name="transactions_filters_coming_soon">Filters coming in next update</string>
+    <string name="transactions_apply_filters">Apply Filters</string>
+    <string name="transactions_select_month">Select Month</string>
+    <string name="transactions_dev_tweaks_label">DEV TWEAKS</string>
+    <string name="transactions_dev_tweaks_sub">Visual overrides available here...</string>
+
+    <!-- ReadOnlyTransactionSheet -->
+    <string name="readonly_sheet_amount">Amount</string>
+    <string name="readonly_sheet_type">Type</string>
+    <string name="readonly_sheet_account">Account</string>
+    <string name="readonly_sheet_date">Date</string>
+    <string name="readonly_sheet_time">Time</string>
+    <string name="readonly_sheet_note">Note</string>
+    <string name="readonly_sheet_tags">Tags</string>
+    <string name="readonly_sheet_edit">Edit</string>
+    <string name="readonly_sheet_delete">Delete</string>
+    <string name="readonly_sheet_unknown">Unknown</string>
 </resources>

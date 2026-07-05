@@ -26,6 +26,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -199,7 +201,7 @@ fun TransactionsScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search title, note, or tag", style = AppTypography.bodySmall) },
+                        placeholder = { Text(stringResource(R.string.transactions_search_placeholder), style = AppTypography.bodySmall) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -227,7 +229,12 @@ fun TransactionsScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("All", "Income", "Expense").forEach { seg ->
+                    val segmentItems = listOf(
+                        "All" to stringResource(R.string.transactions_filter_all),
+                        "Income" to stringResource(R.string.income),
+                        "Expense" to stringResource(R.string.expense)
+                    )
+                    segmentItems.forEach { (seg, label) ->
                         val isSel = selectedSegment == seg
                         Box(
                             modifier = Modifier
@@ -238,7 +245,7 @@ fun TransactionsScreen(
                                 .clickable { selectedSegment = seg },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(seg, style = AppTypography.caption, color = if (isSel) MaterialTheme.appColors.textPrimary else MaterialTheme.appColors.textSecondary)
+                            Text(label, style = AppTypography.caption, color = if (isSel) MaterialTheme.appColors.textPrimary else MaterialTheme.appColors.textSecondary)
                         }
                     }
                 }
@@ -267,9 +274,9 @@ fun TransactionsScreen(
                     modifier = Modifier.fillMaxWidth().height(36.dp).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Date ↓", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(0.5f))
-                    Text("Name · Notes", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(1f))
-                    Text("Amount", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(0.6f), textAlign = TextAlign.End)
+                    Text(stringResource(R.string.transactions_sort_date), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(0.5f))
+                    Text(stringResource(R.string.transactions_column_name_notes), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.transaction_amount), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary, modifier = Modifier.weight(0.6f), textAlign = TextAlign.End)
                 }
             }
         },
@@ -288,17 +295,17 @@ fun TransactionsScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         if (searchQuery.isNotEmpty()) {
-                            Text("No matches for '$searchQuery'", style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
+                            Text(stringResource(R.string.transactions_no_matches_query, searchQuery), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
                         } else if (allTxs.isEmpty()) {
-                            Text("Add your first transaction", style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
+                            Text(stringResource(R.string.transactions_add_first), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = { showQuickAdd = true }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)) {
-                                Text("Add Transaction")
+                                Text(stringResource(R.string.transactions_add_btn))
                             }
                         } else {
-                            Text("No transactions match", style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
+                            Text(stringResource(R.string.transactions_no_matches_filter), style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textSecondary)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Clear filters", style = AppTypography.bodySmall, color = MaterialTheme.appColors.primary, modifier = Modifier.clickable {
+                            Text(stringResource(R.string.transactions_clear_filters), style = AppTypography.bodySmall, color = MaterialTheme.appColors.primary, modifier = Modifier.clickable {
                                 selectedSegment = "All"
                                 selectedAccounts = emptySet()
                             }.padding(8.dp))
@@ -343,13 +350,13 @@ fun TransactionsScreen(
                                     if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                                         scope.launch {
                                             viewModel.deleteTransaction(tx.id)
-                                            Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.transactions_status_deleted), Toast.LENGTH_SHORT).show()
                                         }
                                         true
                                     } else if (dismissValue == SwipeToDismissBoxValue.StartToEnd) {
                                         scope.launch {
                                             viewModel.archiveTransaction(tx.id, true)
-                                            Toast.makeText(context, "Archived", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.transactions_status_archived), Toast.LENGTH_SHORT).show()
                                         }
                                         true
                                     } else false
@@ -480,7 +487,7 @@ fun TransactionsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Archived (${filteredArchivedList.size}) ${if (isArchivedExpanded) "↑" else "↓"}",
+                                        "${stringResource(R.string.transactions_archived_count, filteredArchivedList.size)} ${if (isArchivedExpanded) "↑" else "↓"}",
                                         style = AppTypography.caption.copy(fontSize = 13.sp),
                                         color = MaterialTheme.appColors.textSecondary
                                     )
@@ -659,14 +666,14 @@ fun TransactionsScreen(
     if (showAccountFilter) {
         ModalBottomSheet(onDismissRequest = { showAccountFilter = false }, containerColor = MaterialTheme.appColors.bgBase) {
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("Filter by Account", style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
+                Text(stringResource(R.string.transactions_filter_by_account), style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn {
                     item {
                         Row(modifier = Modifier.fillMaxWidth().clickable { selectedAccounts = emptySet() }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = selectedAccounts.isEmpty(), onCheckedChange = { if(it) selectedAccounts = emptySet() })
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("All accounts", color = MaterialTheme.appColors.textPrimary)
+                            Text(stringResource(R.string.transactions_all_accounts), color = MaterialTheme.appColors.textPrimary)
                         }
                     }
                     items(accounts) { acc ->
@@ -695,20 +702,20 @@ fun TransactionsScreen(
     if (showFilterSheet) {
         ModalBottomSheet(onDismissRequest = { showFilterSheet = false }, containerColor = MaterialTheme.appColors.bgBase) {
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp).weight(1f, false)) {
-                 Text("Filters", style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
+                 Text(stringResource(R.string.transactions_filters_title), style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
                  Spacer(modifier = Modifier.height(16.dp))
-                 Text("Date Range", style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
+                 Text(stringResource(R.string.transactions_date_range), style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
                  Row(modifier = Modifier.padding(vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                     listOf("Today", "Week", "Month", "Custom").forEach { c -> Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.appColors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 6.dp)){Text(c, style=AppTypography.caption)} }
+                     listOf(stringResource(R.string.transactions_range_today), stringResource(R.string.transactions_range_week), stringResource(R.string.transactions_range_month), stringResource(R.string.transactions_range_custom)).forEach { c -> Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.appColors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 6.dp)){Text(c, style=AppTypography.caption)} }
                  }
                  Spacer(modifier = Modifier.height(16.dp))
-                 Text("Type", style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
+                 Text(stringResource(R.string.transactions_type_label), style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
                  Row(modifier = Modifier.padding(vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                     listOf("Income", "Expense", "Transfer").forEach { c -> Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.appColors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 6.dp)){Text(c, style=AppTypography.caption)} }
+                     listOf(stringResource(R.string.income), stringResource(R.string.expense), stringResource(R.string.transactions_type_transfer)).forEach { c -> Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.appColors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 6.dp)){Text(c, style=AppTypography.caption)} }
                  }
                  Spacer(modifier = Modifier.height(32.dp))
-                 Button(onClick = { Toast.makeText(context, "Filters coming in next update", Toast.LENGTH_SHORT).show(); showFilterSheet = false }, modifier = Modifier.fillMaxWidth()) {
-                     Text("Apply Filters")
+                 Button(onClick = { Toast.makeText(context, context.getString(R.string.transactions_filters_coming_soon), Toast.LENGTH_SHORT).show(); showFilterSheet = false }, modifier = Modifier.fillMaxWidth()) {
+                     Text(stringResource(R.string.transactions_apply_filters))
                  }
                  Spacer(modifier = Modifier.height(24.dp))
             }
@@ -718,7 +725,7 @@ fun TransactionsScreen(
     if (showMonthPicker) {
         ModalBottomSheet(onDismissRequest = { showMonthPicker = false }, containerColor = MaterialTheme.appColors.bgBase) {
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text("Select Month", style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
+                Text(stringResource(R.string.transactions_select_month), style = AppTypography.headline3, color = MaterialTheme.appColors.textPrimary)
                 Spacer(modifier = Modifier.height(24.dp))
                 val monthLabels = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
                 var tmpYr by remember { mutableStateOf(currentYear) }
@@ -757,9 +764,9 @@ fun TransactionsScreen(
     if (showTweaks) {
         ModalBottomSheet(onDismissRequest = { showTweaks = false }) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("DEV TWEAKS", style = AppTypography.headline3)
+                Text(stringResource(R.string.transactions_dev_tweaks_label), style = AppTypography.headline3)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Visual overrides available here...")
+                Text(stringResource(R.string.transactions_dev_tweaks_sub))
             }
         }
     }

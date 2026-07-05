@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,17 +58,17 @@ fun ReadOnlyTransactionSheet(
             )
             Divider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.appColors.borderLight)
 
-            DetailRow("Amount", "₹${transaction.amount}")
-            DetailRow("Type", transaction.type.lowercase().replaceFirstChar { it.uppercase() })
-            DetailRow("Account", account?.name ?: "Unknown")
-            DetailRow("Date", sdfDate.format(Date(transaction.date)))
-            DetailRow("Time", sdfTime.format(Date(transaction.date)))
-            
+            DetailRow(stringResource(R.string.readonly_sheet_amount), "₹${transaction.amount}")
+            DetailRow(stringResource(R.string.readonly_sheet_type), transaction.type.lowercase().replaceFirstChar { it.uppercase() })
+            DetailRow(stringResource(R.string.readonly_sheet_account), account?.name ?: stringResource(R.string.readonly_sheet_unknown))
+            DetailRow(stringResource(R.string.readonly_sheet_date), sdfDate.format(Date(transaction.date)))
+            DetailRow(stringResource(R.string.readonly_sheet_time), sdfTime.format(Date(transaction.date)))
+
             if (transaction.description != null) {
-                DetailRow("Note", transaction.description)
+                DetailRow(stringResource(R.string.readonly_sheet_note), transaction.description)
             }
             if (transaction.tags.isNotEmpty()) {
-                DetailRow("Tags", transaction.tags.split(",").joinToString(" ") { "[$it]" })
+                DetailRow(stringResource(R.string.readonly_sheet_tags), transaction.tags.split(",").joinToString(" ") { "[$it]" })
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.appColors.borderLight)
@@ -77,14 +79,14 @@ fun ReadOnlyTransactionSheet(
                     modifier = Modifier.weight(1f).padding(end = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.appColors.primary)
                 ) {
-                    Text("Edit")
+                    Text(stringResource(R.string.readonly_sheet_edit))
                 }
                 Button(
                     onClick = onDelete,
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.expense)
                 ) {
-                    Text("Delete", color = Color.White)
+                    Text(stringResource(R.string.readonly_sheet_delete), color = Color.White)
                 }
             }
         }

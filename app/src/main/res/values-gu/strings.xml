@@ -300,4 +300,45 @@
     <string name="month_november">નવેમ્બર</string>
     <string name="month_december">ડિસેમ્બર</string>
     <string name="account_selector_all_accounts">બધા એકાઉન્ટ</string>
+
+    <!-- TransactionsScreen -->
+    <string name="transactions_filter_all">બધા</string>
+    <string name="transactions_search_placeholder">ટાઇટલ, નોંધ અથવા ટેગ શોધો</string>
+    <string name="transactions_sort_date">તારીખ ↓</string>
+    <string name="transactions_column_name_notes">નામ · નોંધ</string>
+    <string name="transactions_no_matches_query">\'%s\' માટે કોઈ મેચ મળ્યો નથી</string>
+    <string name="transactions_add_first">તમારું પહેલું ટ્રાન્ઝેક્શન ઉમેરો</string>
+    <string name="transactions_add_btn">ટ્રાન્ઝેક્શન ઉમેરો</string>
+    <string name="transactions_no_matches_filter">ફિલ્ટર સાથે કોઈ ટ્રાન્ઝેક્શન મેચ થયું નહીં</string>
+    <string name="transactions_clear_filters">ફિલ્ટર સાફ કરો</string>
+    <string name="transactions_status_deleted">ડિલીટ કરવામાં આવ્યું</string>
+    <string name="transactions_status_archived">આર્કાઇવ્ડ</string>
+    <string name="transactions_archived_count">આર્કાઇવ્ડ (%d)</string>
+    <string name="transactions_filter_by_account">એકાઉન્ટ પ્રમાણે ફિલ્ટર કરો</string>
+    <string name="transactions_all_accounts">બધા એકાઉન્ટ</string>
+    <string name="transactions_filters_title">ફિલ્ટર</string>
+    <string name="transactions_date_range">તારીખની રેન્જ</string>
+    <string name="transactions_range_today">આજે</string>
+    <string name="transactions_range_week">અઠવાડિયું</string>
+    <string name="transactions_range_month">મહિનો</string>
+    <string name="transactions_range_custom">કસ્ટમ</string>
+    <string name="transactions_type_label">ટાઇપ</string>
+    <string name="transactions_type_transfer">ટ્રાન્સફર</string>
+    <string name="transactions_filters_coming_soon">આવનારા અપડેટમાં ફિલ્ટર મળશે</string>
+    <string name="transactions_apply_filters">ફિલ્ટર લાગુ કરો</string>
+    <string name="transactions_select_month">મહિનો પસંદ કરો</string>
+    <string name="transactions_dev_tweaks_label">DEV TWEAKS</string>
+    <string name="transactions_dev_tweaks_sub">Visual overrides available here...</string>
+
+    <!-- ReadOnlyTransactionSheet -->
+    <string name="readonly_sheet_amount">એમાઉન્ટ</string>
+    <string name="readonly_sheet_type">ટાઇપ</string>
+    <string name="readonly_sheet_account">એકાઉન્ટ</string>
+    <string name="readonly_sheet_date">તારીખ</string>
+    <string name="readonly_sheet_time">સમય</string>
+    <string name="readonly_sheet_note">નોંધ</string>
+    <string name="readonly_sheet_tags">ટેગ્સ</string>
+    <string name="readonly_sheet_edit">એડિટ કરો</string>
+    <string name="readonly_sheet_delete">ડિલીટ કરો</string>
+    <string name="readonly_sheet_unknown">અજ્ઞાત</string>
 </resources>

@@ -358,9 +358,9 @@ fun TransactionDetailSheet(
                         )
                     } else {
                         val categoryName = if (type == "TRANSFER") {
-                            "Transfer"
+                            context.getString(R.string.transaction_type_transfer)
                         } else {
-                            allCategories.firstOrNull { it.id == categoryId }?.name ?: "Transaction"
+                            allCategories.firstOrNull { it.id == categoryId }?.name ?: context.getString(R.string.transaction_default_title)
                         }
                         viewModel.addTransaction(
                             title = categoryName,
