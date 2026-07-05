@@ -16,3 +16,16 @@
 local.properties
 .env
 debug.keystore
+/app/google-services.json
+# IntelliJ IDEA / Android Studio files
+.idea/
+*.iml
+.gradle/
+local.properties
+
+# Build outputs
+**/build/
+app/release/
+
+# Temporary / Data files
+*.csv
