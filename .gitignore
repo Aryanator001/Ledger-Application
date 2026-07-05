@@ -28,4 +28,4 @@ local.properties
 app/release/
 
 # Temporary / Data files
-*.csv
+
