@@ -140,13 +140,22 @@ All use manual `ViewModelProvider.Factory`; no Hilt. Factories are named `<ViewM
 Hard constraints — do not deviate:
 - **Colors**: Always use `MaterialTheme.appColors.*` tokens (e.g. `bgBase`, `bgSurface`, `bgSurface2`, `primary`, `textPrimary`, `textSecondary`, `textTertiary`, `borderLight`). Never hardcode hex values or use `Color.Red`, `Color.Gray`, etc.
 - **Typography**: Always use `AppTypography.*` tokens. Never use `MaterialTheme.typography.*` or inline `TextStyle()` unless the token genuinely doesn't exist — if missing, add a new token to the theme file rather than inlining.
-- **Spacing**: Use the 8dp/12dp/16dp/24dp grid that existing screens follow. Don't invent new arbitrary dp values.
+- **Spacing**: Use `AppSpacing.*` tokens (`xs`=4dp, `sm`=8dp, `md`=12dp, `lg`=16dp, `xl`=24dp, `xxl`=32dp, `xxxl`=48dp, `buttonHeight`=48dp). Don't invent new arbitrary dp values.
 - **New semantic colors** (e.g. a "warning yellow"): Add as a new token to the theme file — never inline it at the call site.
+- **Dark theme**: XML color overrides for night mode live in `res/values-night/`. When adding new XML color resources, add them to both `values/` and `values-night/`.
 - Before reading any existing screen for reference patterns, check `HomeDashboard.kt` and the theme files in `com.example.ui.theme`.
 
 ### Categories
 
 System categories are seeded by `LedgerApplication.seedDefaultCategoriesIfNeeded()` on first launch. The AI extraction layer targets a **fixed subset of IDs**: `general`, `food`, `rent`, `shopping`. Don't rename or remove those four IDs — the Gemini prompt and `CandidateResolver` depend on them.
+
+### Localization
+
+UI strings live in `res/values/strings.xml` (English default), `res/values-hi/strings.xml` (Hindi), and `res/values-gu/strings.xml` (Gujarati). Any new string resource must be added to all three files. Use `stringResource(R.string.*)` in Compose — never hardcode visible text.
+
+### Reminders
+
+`RemindersScreen`, `RecurringRemindersListScreen`, and `CreateReminderSheet` exist as UI-only stubs. There is no AlarmManager, WorkManager, or notification scheduling wired up — these screens are placeholders for a future Pro feature.
 
 ### Security
 
