@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "105189955946",
+    "project_id": "gen-lang-client-0759884468",
+    "storage_bucket": "gen-lang-client-0759884468.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:105189955946:android:f2587c9556a2de1c6ded13",
+        "android_client_info": {
+          "package_name": "com.aistudio.ledger.qzwxcd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "105189955946-lq8pdb7aq5fdm2u0flbf72vbg4eaqc41.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbllWjPTKHuGrz_hP6kDpZ0CrNedGB62g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "105189955946-lq8pdb7aq5fdm2u0flbf72vbg4eaqc41.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
