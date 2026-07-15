@@ -117,11 +117,7 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                 return@Thread
             }
 
-            handler.post {
-                this.callbacks?.onListeningStarted()
-                // Single static partial so the card shows "Hearing you…" while recording.
-                this.callbacks?.onPartial("Recording…")
-            }
+            handler.post { this.callbacks?.onListeningStarted() }
 
             val readBuf = ByteArray(minBuf)
             val pcmOut = ByteArrayOutputStream()

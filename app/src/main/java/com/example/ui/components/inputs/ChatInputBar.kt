@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +45,8 @@ fun ChatInputBar(
     placeholder: String = "Describe your expense...",
     isListening: Boolean = false
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -123,7 +127,10 @@ fun ChatInputBar(
                     )
                 }
                 IconButton(
-                    onClick = onMicClick,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onMicClick()
+                    },
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = if (isListening) MaterialTheme.appColors.primary
                                        else MaterialTheme.appColors.textSecondary
