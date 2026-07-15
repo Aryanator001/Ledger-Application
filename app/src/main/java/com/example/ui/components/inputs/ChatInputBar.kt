@@ -1,5 +1,11 @@
 package com.example.ui.components.inputs
 
+import androidx.compose.animation.core.InfiniteRepeatableSpec
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,11 +15,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -90,15 +99,41 @@ fun ChatInputBar(
                 )
             }
 
-            // Mic Button
-            IconButton(
-                onClick = onMicClick,
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = if (isListening) MaterialTheme.appColors.primary
-                                   else MaterialTheme.appColors.textSecondary
-                )
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice Input")
+            // Mic / Stop Button with pulse ring when recording
+            val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
+            val pulseScale by infiniteTransition.animateFloat(
+                initialValue = 1f, targetValue = 1.65f, label = "pulse_scale",
+                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart)
+            )
+            val pulseAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.28f, targetValue = 0f, label = "pulse_alpha",
+                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart)
+            )
+
+            Box(contentAlignment = Alignment.Center) {
+                if (isListening) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .scale(pulseScale)
+                            .background(
+                                MaterialTheme.appColors.primary.copy(alpha = pulseAlpha),
+                                shape = CircleShape
+                            )
+                    )
+                }
+                IconButton(
+                    onClick = onMicClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (isListening) MaterialTheme.appColors.primary
+                                       else MaterialTheme.appColors.textSecondary
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isListening) Icons.Default.Stop else Icons.Default.Mic,
+                        contentDescription = if (isListening) "Stop recording" else "Voice Input"
+                    )
+                }
             }
 
             // Send Button

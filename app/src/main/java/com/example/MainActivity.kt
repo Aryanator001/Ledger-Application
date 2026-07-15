@@ -65,6 +65,7 @@ import com.example.ai.intent.IntentClassifier
 import com.example.ai.intent.RuleBasedIntentClassifier
 import com.example.ai.stt.SttProvider
 import com.example.ai.stt.AndroidNativeSttProvider
+import com.example.ai.stt.DualSttProvider
 
 import android.view.WindowManager
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -213,7 +214,7 @@ class MainActivity : AppCompatActivity() {
             val authFactory = com.example.ui.viewmodel.AuthViewModelFactory(app.authRepository, app.securityStore)
             val authViewModel: com.example.ui.viewmodel.AuthViewModel = viewModel(factory = authFactory)
 
-            val sttProvider: SttProvider = AndroidNativeSttProvider(this)
+            val sttProvider: SttProvider = DualSttProvider(this)
 
             val isLocked by com.example.data.security.AppLockManager.isLocked.collectAsStateWithLifecycle()
             val appLockEnabled by securityViewModel.appLockEnabled.collectAsStateWithLifecycle()

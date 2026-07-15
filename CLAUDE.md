@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Setup
 
-Copy `.env.example` to `.env` and set your Gemini API key:
+Copy `.env.example` to `.env` and set your API keys:
 ```
 GEMINI_API_KEY=your_key_here
+SARVAM_API_KEY=your_sarvam_key_here   # Primary STT (saaras:v3); Google STT is the fallback
 ```
 
 The debug signing config in `app/build.gradle.kts` points to `~/.android/debug.keystore`. If that file doesn't exist, remove the `signingConfig = signingConfigs.getByName("debugConfig")` line from the `debug` build type before building.

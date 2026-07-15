@@ -168,8 +168,8 @@ class AndroidNativeSttProvider(private val context: Context) : SttProvider {
 
         // Extend silence detection windows. Default is ~800ms; 1500ms gives users
         // more time to pause and think before Android auto-finalizes.
-        putExtra("android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 550L)
-        putExtra("android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 1100L)
+        putExtra("android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 200L)
+        putExtra("android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 250L)
         putExtra("android.speech.extra.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS", 300L)
     }
 
