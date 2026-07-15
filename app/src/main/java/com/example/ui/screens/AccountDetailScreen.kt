@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.cards.TransactionCard
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.appColors
@@ -61,8 +63,22 @@ fun AccountDetailScreen(
     var selectedMonthIndex by remember { mutableStateOf(-1) } // -1 means All Time
     var isMonthDropdownExpanded by remember { mutableStateOf(false) }
 
-    val monthsList = remember {
-        listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+    val monthJanuary = stringResource(R.string.month_january)
+    val monthFebruary = stringResource(R.string.month_february)
+    val monthMarch = stringResource(R.string.month_march)
+    val monthApril = stringResource(R.string.month_april)
+    val monthMay = stringResource(R.string.month_may)
+    val monthJune = stringResource(R.string.month_june)
+    val monthJuly = stringResource(R.string.month_july)
+    val monthAugust = stringResource(R.string.month_august)
+    val monthSeptember = stringResource(R.string.month_september)
+    val monthOctober = stringResource(R.string.month_october)
+    val monthNovember = stringResource(R.string.month_november)
+    val monthDecember = stringResource(R.string.month_december)
+    val monthsList = remember(monthJanuary, monthFebruary, monthMarch, monthApril, monthMay, monthJune,
+        monthJuly, monthAugust, monthSeptember, monthOctober, monthNovember, monthDecember) {
+        listOf(monthJanuary, monthFebruary, monthMarch, monthApril, monthMay, monthJune,
+            monthJuly, monthAugust, monthSeptember, monthOctober, monthNovember, monthDecember)
     }
 
     val filteredTransactions = remember(transactions, selectedMonthIndex) {
@@ -97,13 +113,13 @@ fun AccountDetailScreen(
             CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        text = accountWithBalance?.account?.name ?: "Account Details", 
+                        text = accountWithBalance?.account?.name ?: stringResource(R.string.account_detail_fallback_title),
                         style = AppTypography.headline3
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.account_detail_back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -131,7 +147,7 @@ fun AccountDetailScreen(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Current Balance",
+                        text = stringResource(R.string.account_detail_balance_title),
                         style = AppTypography.caption,
                         color = MaterialTheme.appColors.textTertiary
                     )
@@ -149,7 +165,7 @@ fun AccountDetailScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("Inflow", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
+                            Text(stringResource(R.string.account_detail_inflow_title), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
                             Text(
                                 "+$currencySymbol${String.format("%.2f", accountIncome)}",
                                 style = AppTypography.bodySmall,
@@ -159,7 +175,7 @@ fun AccountDetailScreen(
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Outflow", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
+                            Text(stringResource(R.string.account_detail_outflow_title), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
                             Text(
                                 "-$currencySymbol${String.format("%.2f", accountExpense)}",
                                 style = AppTypography.bodySmall,
@@ -180,7 +196,7 @@ fun AccountDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Transactions",
+                    text = stringResource(R.string.account_detail_txs_title),
                     style = AppTypography.headline3,
                     color = MaterialTheme.appColors.textPrimary
                 )
@@ -197,7 +213,7 @@ fun AccountDetailScreen(
                     ) {
                         Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (selectedMonthIndex == -1) "All Time" else monthsList[selectedMonthIndex], fontSize = 12.sp)
+                        Text(if (selectedMonthIndex == -1) stringResource(R.string.account_detail_all_time_option) else monthsList[selectedMonthIndex], fontSize = 12.sp)
                     }
 
                     DropdownMenu(
@@ -205,7 +221,7 @@ fun AccountDetailScreen(
                         onDismissRequest = { isMonthDropdownExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("All Time") },
+                            text = { Text(stringResource(R.string.account_detail_all_time_option)) },
                             onClick = {
                                 selectedMonthIndex = -1
                                 isMonthDropdownExpanded = false
@@ -236,7 +252,7 @@ fun AccountDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "No transactions found for this period.",
+                            text = stringResource(R.string.account_detail_empty_msg),
                             style = AppTypography.bodyRegular,
                             color = MaterialTheme.appColors.textTertiary
                         )
@@ -248,7 +264,7 @@ fun AccountDetailScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Prefill Transaction", color = Color.White)
+                            Text(stringResource(R.string.account_detail_prefill_btn), color = Color.White)
                         }
                     }
                 }

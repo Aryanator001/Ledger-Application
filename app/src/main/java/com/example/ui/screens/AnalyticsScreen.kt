@@ -49,6 +49,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.*
+import androidx.compose.ui.res.stringResource
+import com.example.R
 
 private val kChartPalette = listOf(
     Color(0xFF1A56E8), Color(0xFF12A67A), Color(0xFFE03F3F), Color(0xFFF59E0B),
@@ -177,8 +179,10 @@ fun AnalyticsScreen(
             // Expanded category transaction list
             if (expandedCategoryId != null && expandedCategoryTxs.isNotEmpty()) {
                 item {
+                    val catName = categoryBreakdown.find { it.categoryId == expandedCategoryId }?.categoryName
+                        ?: stringResource(R.string.transaction_category)
                     SectionCard(
-                        title = "Transactions for ${categoryBreakdown.find { it.categoryId == expandedCategoryId }?.categoryName ?: "Category"}",
+                        title = stringResource(R.string.analytics_transactions_for_template, catName),
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
                             .padding(bottom = 12.dp)
@@ -203,7 +207,7 @@ fun AnalyticsScreen(
                                 )
                                 context.startActivity(Intent.createChooser(intent, "Export CSV"))
                             } catch (e: Exception) {
-                                Toast.makeText(context, "CSV export failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.analytics_csv_export_failed_msg), Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -225,7 +229,7 @@ fun AnalyticsScreen(
                                 )
                                 context.startActivity(Intent.createChooser(intent, "Export PDF"))
                             } catch (e: Exception) {
-                                Toast.makeText(context, "PDF export failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.analytics_pdf_export_failed_msg), Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -256,23 +260,23 @@ fun AnalyticsScreen(
                         } else {
                             val endMs = picked + 86_399_999L
                             if (endMs < customStartMs) {
-                                Toast.makeText(context, "End date must be after start date", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.analytics_end_date_error), Toast.LENGTH_SHORT).show()
                                 return@TextButton
                             }
                             customEndMs = endMs
                             showCustomPicker = false
                             viewModel.onCustomRangeSelected(customStartMs, customEndMs)
                         }
-                    }) { Text(if (pickingStart) "Next" else "Confirm") }
+                    }) { Text(if (pickingStart) stringResource(R.string.analytics_next_btn) else stringResource(R.string.action_confirm)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showCustomPicker = false }) { Text("Cancel") }
+                    TextButton(onClick = { showCustomPicker = false }) { Text(stringResource(R.string.action_cancel)) }
                 }
             ) {
                 DatePicker(state = dateState)
                 if (!pickingStart) {
                     Text(
-                        "Now pick the end date",
+                        stringResource(R.string.analytics_pick_end_date_msg),
                         style = AppTypography.bodySmall,
                         color = MaterialTheme.appColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 24.dp)
@@ -297,6 +301,13 @@ private fun PeriodSelector(
     ) {
         AnalyticsPeriod.entries.forEach { period ->
             val isSelected = period == selected
+            val displayLabel = when (period) {
+                AnalyticsPeriod.ThisWeek    -> stringResource(R.string.analytics_range_this_week)
+                AnalyticsPeriod.ThisMonth   -> stringResource(R.string.analytics_range_this_month)
+                AnalyticsPeriod.Last3Months -> stringResource(R.string.analytics_range_last_3_months)
+                AnalyticsPeriod.ThisYear    -> stringResource(R.string.analytics_range_this_year)
+                AnalyticsPeriod.Custom      -> stringResource(R.string.analytics_range_custom)
+            }
             Box(
                 modifier = Modifier
                     .clip(AppShapes.full)
@@ -314,7 +325,7 @@ private fun PeriodSelector(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = period.label,
+                    text = displayLabel,
                     style = AppTypography.caption,
                     color = if (isSelected) Color.White else MaterialTheme.appColors.textSecondary
                 )
@@ -332,13 +343,13 @@ private fun BusinessHealthCard(
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
-    SectionCard(title = "Business Health", modifier = modifier) {
+    SectionCard(title = stringResource(R.string.analytics_business_health_title), modifier = modifier) {
         if (isLoading) { LoadingShimmer(); return@SectionCard }
 
         val (statusLabel, statusColor) = when (data.status) {
-            HealthStatus.Profitable -> "Profitable" to MaterialTheme.appColors.income
-            HealthStatus.BreakEven  -> "Break Even"  to MaterialTheme.appColors.warning
-            HealthStatus.Loss       -> "Loss"         to MaterialTheme.appColors.expense
+            HealthStatus.Profitable -> stringResource(R.string.analytics_status_profitable) to MaterialTheme.appColors.income
+            HealthStatus.BreakEven  -> stringResource(R.string.analytics_status_break_even) to MaterialTheme.appColors.warning
+            HealthStatus.Loss       -> stringResource(R.string.analytics_status_loss)        to MaterialTheme.appColors.expense
         }
 
         Row(
@@ -358,14 +369,14 @@ private fun BusinessHealthCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             HealthMetric(
-                label = "Total Income",
+                label = stringResource(R.string.analytics_total_income),
                 amountPaise = data.totalIncomePaise,
                 currencySymbol = currencySymbol,
                 color = MaterialTheme.appColors.income,
                 modifier = Modifier.weight(1f)
             )
             HealthMetric(
-                label = "Total Expense",
+                label = stringResource(R.string.analytics_total_expense),
                 amountPaise = data.totalExpensePaise,
                 currencySymbol = currencySymbol,
                 color = MaterialTheme.appColors.expense,
@@ -383,7 +394,8 @@ private fun BusinessHealthCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Net ${if (data.netPaise >= 0) "Profit" else "Loss"}",
+                text = if (data.netPaise >= 0) stringResource(R.string.analytics_net_profit)
+                       else stringResource(R.string.analytics_net_loss),
                 style = AppTypography.bodyLarge,
                 color = MaterialTheme.appColors.textPrimary
             )
@@ -432,16 +444,16 @@ private fun OutstandingBalanceSection(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
-    SectionCard(title = "Outstanding Balance", modifier = modifier) {
+    SectionCard(title = stringResource(R.string.analytics_outstanding_balance_title), modifier = modifier) {
         if (receivables.isEmpty() && payables.isEmpty()) {
             Text(
-                "No outstanding entries detected.",
+                stringResource(R.string.analytics_no_outstanding_msg),
                 style = AppTypography.bodyRegular,
                 color = MaterialTheme.appColors.textTertiary,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                "Add keywords like 'udhar', 'baki', 'receivable', or 'payable' in transaction notes to track outstanding amounts.",
+                stringResource(R.string.analytics_outstanding_hint),
                 style = AppTypography.bodySmall,
                 color = MaterialTheme.appColors.textTertiary
             )
@@ -450,7 +462,7 @@ private fun OutstandingBalanceSection(
 
         if (receivables.isNotEmpty()) {
             OutstandingList(
-                heading = "Receivables (owed to you)",
+                heading = stringResource(R.string.analytics_receivables_title),
                 items = receivables,
                 currencySymbol = currencySymbol,
                 amountColor = MaterialTheme.appColors.income
@@ -463,7 +475,7 @@ private fun OutstandingBalanceSection(
         }
         if (payables.isNotEmpty()) {
             OutstandingList(
-                heading = "Payables (you owe)",
+                heading = stringResource(R.string.analytics_payables_title),
                 items = payables,
                 currencySymbol = currencySymbol,
                 amountColor = MaterialTheme.appColors.expense
@@ -490,7 +502,7 @@ private fun OutstandingList(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    item.partyName,
+                    item.partyName.ifBlank { stringResource(R.string.analytics_unknown) },
                     style = AppTypography.bodyRegular,
                     color = MaterialTheme.appColors.textPrimary,
                     maxLines = 1,
@@ -530,7 +542,7 @@ private fun AiInsightsCard(
     modifier: Modifier = Modifier
 ) {
     SectionCard(
-        title = "AI Insights",
+        title = stringResource(R.string.analytics_ai_insights_title),
         trailingIcon = {
             Icon(
                 Icons.Default.AutoAwesome,
@@ -542,14 +554,14 @@ private fun AiInsightsCard(
         modifier = modifier
     ) {
         when (state) {
-            is AiInsightState.Idle    -> Text("Generating insights…",
+            is AiInsightState.Idle    -> Text(stringResource(R.string.analytics_generating_insights_msg),
                 style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textTertiary)
             is AiInsightState.Loading -> LoadingShimmer()
             is AiInsightState.Ready   -> Text(state.text,
                 style = AppTypography.bodyRegular,
                 color = MaterialTheme.appColors.textPrimary,
                 lineHeight = 22.sp)
-            is AiInsightState.Error   -> Text("Insights unavailable right now.",
+            is AiInsightState.Error   -> Text(stringResource(R.string.analytics_insights_unavailable_msg),
                 style = AppTypography.bodyRegular, color = MaterialTheme.appColors.textTertiary)
         }
     }
@@ -565,11 +577,11 @@ private fun TrendsSection(
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
-    SectionCard(title = "Income vs Expense Trends", modifier = modifier) {
+    SectionCard(title = stringResource(R.string.analytics_income_expense_trends_title), modifier = modifier) {
         when {
             isLoading -> LoadingShimmer()
             points.isEmpty() -> Text(
-                "No data for this period.",
+                stringResource(R.string.analytics_no_data_period_msg),
                 style = AppTypography.bodyRegular,
                 color = MaterialTheme.appColors.textTertiary,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -584,8 +596,8 @@ private fun TrendsSection(
                     modifier = Modifier.padding(bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    LegendDot("Income", incomeColor)
-                    LegendDot("Expense", expenseColor)
+                    LegendDot(stringResource(R.string.income), incomeColor)
+                    LegendDot(stringResource(R.string.expense), expenseColor)
                 }
 
                 TrendLineChart(
@@ -676,11 +688,11 @@ private fun ExpenseBreakdownSection(
     onCategoryTap: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    SectionCard(title = "Expense Breakdown", modifier = modifier) {
+    SectionCard(title = stringResource(R.string.analytics_expense_breakdown_title), modifier = modifier) {
         when {
             isLoading -> LoadingShimmer()
             breakdown.isEmpty() -> Text(
-                "No expenses for this period.",
+                stringResource(R.string.analytics_no_expenses_period_msg),
                 style = AppTypography.bodyRegular,
                 color = MaterialTheme.appColors.textTertiary,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -822,19 +834,19 @@ private fun ExportSection(
     onExportPdf: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    SectionCard(title = "Export Reports", modifier = modifier) {
+    SectionCard(title = stringResource(R.string.analytics_export_reports_title), modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ExportButton(
-                label = "Export CSV",
+                label = stringResource(R.string.analytics_export_csv_btn),
                 icon = { Icon(Icons.Default.TableChart, null, modifier = Modifier.size(18.dp)) },
                 onClick = onExportCsv,
                 modifier = Modifier.weight(1f)
             )
             ExportButton(
-                label = "Export PDF",
+                label = stringResource(R.string.analytics_export_pdf_btn),
                 icon = { Icon(Icons.Default.FileDownload, null, modifier = Modifier.size(18.dp)) },
                 onClick = onExportPdf,
                 modifier = Modifier.weight(1f)

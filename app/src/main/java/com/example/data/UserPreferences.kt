@@ -30,10 +30,12 @@ class UserPreferences(private val context: Context) {
         val CATEGORIES_SEEDED = booleanPreferencesKey("categories_seeded")
         val ACTIVE_USER_ID = stringPreferencesKey("active_user_id")
         val ACTIVE_LEDGER_SCOPE_ID = stringPreferencesKey("active_ledger_scope_id")
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
     }
 
     val activeUserId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_USER_ID] }
     val activeLedgerScopeId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_LEDGER_SCOPE_ID] }
+    val appLanguage: Flow<String> = context.dataStore.data.map { it[APP_LANGUAGE] ?: "en" }
 
     val theme: Flow<String> = context.dataStore.data.map { it[THEME] ?: "System" }
     val firstDayOfWeek: Flow<String> = context.dataStore.data.map { it[FIRST_DAY_OF_WEEK] ?: "Monday" }
@@ -49,6 +51,7 @@ class UserPreferences(private val context: Context) {
     val categoriesSeeded: Flow<Boolean> = context.dataStore.data.map { it[CATEGORIES_SEEDED] ?: false }
 
     suspend fun setTheme(value: String) { context.dataStore.edit { it[THEME] = value } }
+    suspend fun setAppLanguage(code: String) { context.dataStore.edit { it[APP_LANGUAGE] = code } }
     suspend fun setFirstDayOfWeek(value: String) { context.dataStore.edit { it[FIRST_DAY_OF_WEEK] = value } }
     suspend fun setDateFormat(value: String) { context.dataStore.edit { it[DATE_FORMAT] = value } }
     suspend fun setTimeFormat(value: String) { context.dataStore.edit { it[TIME_FORMAT] = value } }

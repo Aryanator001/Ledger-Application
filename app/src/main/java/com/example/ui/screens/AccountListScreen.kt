@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.Account
 import com.example.data.AccountWithBalance
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
 import com.example.ui.theme.accountPalette
@@ -85,17 +87,19 @@ fun AccountListScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Account Management", style = AppTypography.headline3) },
+                title = { Text(stringResource(R.string.account_list_title), style = AppTypography.headline3) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.account_list_back_desc))
                     }
                 },
                 actions = {
+                    val doneDesc = stringResource(R.string.account_list_done_desc)
+                    val reorderDesc = stringResource(R.string.account_list_reorder_desc)
                     IconButton(onClick = { isReorderMode = !isReorderMode }) {
                         Icon(
                             imageVector = if (isReorderMode) Icons.Default.Check else Icons.Default.Reorder,
-                            contentDescription = if (isReorderMode) "Done" else "Reorder Accounts",
+                            contentDescription = if (isReorderMode) doneDesc else reorderDesc,
                             tint = if (isReorderMode) MaterialTheme.appColors.primary else MaterialTheme.appColors.textPrimary
                         )
                     }
@@ -118,7 +122,7 @@ fun AccountListScreen(
                 shape = CircleShape,
                 modifier = Modifier.testTag("add_account_fab")
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Account")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.account_list_add_desc))
             }
         },
         containerColor = MaterialTheme.appColors.bgBase
@@ -133,13 +137,13 @@ fun AccountListScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.AccountBalance,
-                        contentDescription = "No Accounts",
+                        contentDescription = stringResource(R.string.account_list_no_accounts_desc),
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.appColors.textTertiary
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No accounts registered yet",
+                        text = stringResource(R.string.account_list_empty_msg),
                         style = AppTypography.bodyRegular,
                         color = MaterialTheme.appColors.textSecondary
                     )
@@ -151,7 +155,7 @@ fun AccountListScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
                     ) {
-                        Text("Add First Account", color = Color.White)
+                        Text(stringResource(R.string.account_list_add_first_btn), color = Color.White)
                     }
                 }
             }
@@ -221,7 +225,7 @@ fun AccountListScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Archived Accounts (${archivedAccounts.size})",
+                                        text = stringResource(R.string.account_list_archived_section_title, archivedAccounts.size),
                                         style = AppTypography.bodySmall,
                                         color = MaterialTheme.appColors.textPrimary
                                     )
@@ -327,10 +331,10 @@ fun AccountRow(
 
             if (isReorderMode) {
                 IconButton(onClick = onUp) {
-                    Icon(Icons.Default.ArrowDropUp, contentDescription = "Move Up", tint = MaterialTheme.appColors.textSecondary)
+                    Icon(Icons.Default.ArrowDropUp, contentDescription = stringResource(R.string.account_list_move_up_desc), tint = MaterialTheme.appColors.textSecondary)
                 }
                 IconButton(onClick = onDown) {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Move Down", tint = MaterialTheme.appColors.textSecondary)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.account_list_move_down_desc), tint = MaterialTheme.appColors.textSecondary)
                 }
             } else {
                 Column(
@@ -346,14 +350,14 @@ fun AccountRow(
                     )
                     if (account.excludeFromTotal) {
                         Text(
-                            text = "Excluded",
+                            text = stringResource(R.string.account_list_excluded_badge),
                             style = AppTypography.caption,
                             color = MaterialTheme.appColors.expense
                         )
                     }
                 }
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Account", tint = MaterialTheme.appColors.textTertiary)
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.account_list_edit_header), tint = MaterialTheme.appColors.textTertiary)
                 }
             }
         }
@@ -371,6 +375,10 @@ fun AccountFormSheet(
     val context = LocalContext.current
     val accountsWithBalance by viewModel.allAccountsWithBalance.collectAsStateWithLifecycle()
     val baseCurrency by settingsViewModel.currencySymbol.collectAsStateWithLifecycle()
+
+    val nameRequiredToast = stringResource(R.string.account_list_name_required_toast)
+    val editHeader = stringResource(R.string.account_list_edit_header)
+    val addHeader = stringResource(R.string.account_list_add_header)
 
     var name by remember { mutableStateOf(accountToEdit?.name ?: "") }
     var type by remember { mutableStateOf(accountToEdit?.type ?: "CASH") }
@@ -410,7 +418,7 @@ fun AccountFormSheet(
                 .verticalScroll(androidx.compose.foundation.rememberScrollState())
         ) {
             Text(
-                text = if (accountToEdit != null) "Edit Account" else "Add New Account",
+                text = if (accountToEdit != null) editHeader else addHeader,
                 style = AppTypography.headline3,
                 color = MaterialTheme.appColors.textPrimary
             )
@@ -420,7 +428,7 @@ fun AccountFormSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { if (it.length <= 30) name = it },
-                label = { Text("Account Name (Required)") },
+                label = { Text(stringResource(R.string.account_list_name_field)) },
                 modifier = Modifier.fillMaxWidth().testTag("account_name_field"),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -435,7 +443,7 @@ fun AccountFormSheet(
                 OutlinedTextField(
                     value = startingBalanceStr,
                     onValueChange = { startingBalanceStr = it },
-                    label = { Text("Initial Balance ($baseCurrency)") },
+                    label = { Text(stringResource(R.string.account_list_balance_field, baseCurrency)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f).testTag("account_balance_field"),
                     singleLine = true
@@ -443,7 +451,7 @@ fun AccountFormSheet(
                 Spacer(modifier = Modifier.width(12.dp))
                 // Exclude switch
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Exclude", style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
+                    Text(stringResource(R.string.account_list_exclude_label), style = AppTypography.caption, color = MaterialTheme.appColors.textSecondary)
                     Spacer(modifier = Modifier.width(4.dp))
                     Switch(
                         checked = excludeFromTotal,
@@ -455,7 +463,7 @@ fun AccountFormSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Emoji Selection
-            Text("Select Icon Emoji", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
+            Text(stringResource(R.string.account_list_icon_title), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier
@@ -485,7 +493,7 @@ fun AccountFormSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Color Swatches Selection
-            Text("Select Swatch Color", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
+            Text(stringResource(R.string.account_list_color_title), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier
@@ -513,7 +521,7 @@ fun AccountFormSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Account Type Selector (7 grid chips)
-            Text("Account Type", style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
+            Text(stringResource(R.string.account_list_type_title), style = AppTypography.caption, color = MaterialTheme.appColors.textTertiary)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier
@@ -542,7 +550,7 @@ fun AccountFormSheet(
             Button(
                 onClick = {
                     if (name.isBlank()) {
-                        Toast.makeText(context, "Account Name is required", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, nameRequiredToast, Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     val startingBal = startingBalanceStr.toDoubleOrNull() ?: 0.0
@@ -572,7 +580,7 @@ fun AccountFormSheet(
                 modifier = Modifier.fillMaxWidth().height(48.dp).testTag("save_account_button"),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
             ) {
-                Text("Save Account", color = Color.White)
+                Text(stringResource(R.string.account_list_save_btn), color = Color.White)
             }
 
             if (accountToEdit != null) {
@@ -587,7 +595,7 @@ fun AccountFormSheet(
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.bgSurface2, contentColor = MaterialTheme.appColors.textPrimary)
                 ) {
-                    Text(if (accountToEdit.isArchived) "Unarchive Account" else "Archive Account")
+                    Text(if (accountToEdit.isArchived) stringResource(R.string.account_list_unarchive_btn) else stringResource(R.string.account_list_archive_btn))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -598,7 +606,7 @@ fun AccountFormSheet(
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.expense)
                 ) {
-                    Text("Delete Account", color = Color.White)
+                    Text(stringResource(R.string.account_list_delete_btn), color = Color.White)
                 }
             }
         }
@@ -607,8 +615,8 @@ fun AccountFormSheet(
     if (showDeleteChooser && accountToEdit != null) {
         AlertDialog(
             onDismissRequest = { showDeleteChooser = false },
-            title = { Text("Delete ${accountToEdit.name}?") },
-            text = { Text("This account may contain associated transactions. How should we proceed?") },
+            title = { Text(stringResource(R.string.account_list_delete_confirm_title, accountToEdit.name)) },
+            text = { Text(stringResource(R.string.account_list_delete_confirm_msg)) },
             confirmButton = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Option 1: Reassign to next account
@@ -623,7 +631,7 @@ fun AccountFormSheet(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
                         ) {
-                            Text("Reassign transactions to ${fallbackAccount.name}", color = Color.White)
+                            Text(stringResource(R.string.account_list_reassign_btn, fallbackAccount.name), color = Color.White)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -638,7 +646,7 @@ fun AccountFormSheet(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.expense)
                     ) {
-                        Text("Delete all associated transactions", color = Color.White)
+                        Text(stringResource(R.string.account_list_delete_txs_btn), color = Color.White)
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -647,7 +655,7 @@ fun AccountFormSheet(
                         onClick = { showDeleteChooser = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             }

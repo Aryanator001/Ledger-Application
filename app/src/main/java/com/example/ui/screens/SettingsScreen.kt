@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import com.example.ui.theme.appColors
 import androidx.compose.material3.MaterialTheme
 import com.example.ui.theme.AppShapes
@@ -47,7 +49,7 @@ fun SettingsScreen(
     ) {
         // 1. Header
         Text(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             style = AppTypography.display.copy(fontSize = 34.sp),
             color = MaterialTheme.appColors.textPrimary,
             modifier = Modifier.padding(16.dp)
@@ -69,45 +71,45 @@ fun SettingsScreen(
             Column {
                 SettingsRow(
                     icon = Icons.Default.Settings,
-                    label = "General",
+                    label = stringResource(R.string.settings_general_label),
                     onPress = onNavigateToGeneral
                 )
                 SettingsRow(
                     icon = Icons.Default.AccountBalance,
-                    label = "Accounts",
+                    label = stringResource(R.string.settings_accounts_label),
                     onPress = onNavigateToAccounts
                 )
                 SettingsRow(
                     icon = Icons.Default.Business,
-                    label = "Business Details",
-                    rightBadge = "Pro",
+                    label = stringResource(R.string.settings_business_details_label),
+                    rightBadge = stringResource(R.string.settings_pro_badge),
                     onPress = { /* Navigate to BusinessDetailsScreen */ }
                 )
                 SettingsRow(
                     icon = Icons.Default.Lock,
-                    label = "Security",
+                    label = stringResource(R.string.settings_security_label),
                     onPress = onNavigateToSecurity
                 )
                 SettingsRow(
                     icon = Icons.Default.CurrencyExchange,
-                    label = "Change Currency",
+                    label = stringResource(R.string.settings_change_currency_label),
                     rightLabel = currencyCode,
                     onPress = onNavigateToCurrency
                 )
                 SettingsRow(
                     icon = Icons.Default.CloudUpload,
-                    label = "Backup & Restore",
+                    label = stringResource(R.string.settings_backup_restore_label),
                     onPress = onNavigateToBackup
                 )
                 SettingsRow(
                     icon = Icons.Default.Notifications,
-                    label = "Reminders",
-                    rightLabel = "Lite",
+                    label = stringResource(R.string.settings_reminders_label),
+                    rightLabel = stringResource(R.string.settings_lite_badge),
                     onPress = onNavigateToReminders
                 )
                 SettingsRow(
                     icon = Icons.Default.Star,
-                    label = "Need new feature?",
+                    label = stringResource(R.string.settings_need_new_feature_label),
                     showDivider = false,
                     onPress = { /* Navigate to FeatureRequestScreen */ }
                 )
@@ -127,22 +129,22 @@ fun SettingsScreen(
             Column {
                 SettingsRow(
                     icon = Icons.Default.Help,
-                    label = "FAQs",
+                    label = stringResource(R.string.settings_faqs_label),
                     onPress = { /* Navigate to FAQScreen */ }
                 )
                 SettingsRow(
                     icon = Icons.Default.Apps,
-                    label = "My Other Apps",
+                    label = stringResource(R.string.settings_my_other_apps_label),
                     onPress = { /* Navigate to OtherAppsScreen */ }
                 )
                 SettingsRow(
                     icon = Icons.Default.StarHalf,
-                    label = "Love the App? Rate It",
+                    label = stringResource(R.string.settings_rate_app_label),
                     onPress = { /* Trigger native App Store rating prompt */ }
                 )
                 SettingsRow(
                     icon = Icons.Default.Share,
-                    label = "Share App",
+                    label = stringResource(R.string.settings_share_app_label),
                     showDivider = false,
                     onPress = { /* Trigger native share sheet */ }
                 )
@@ -184,13 +186,13 @@ fun UpgradeBanner(onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Upgrade to Pro",
+                    text = stringResource(R.string.settings_upgrade_to_pro),
                     color = Color.White,
                     style = AppTypography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Unlock all features and Remove Ads.",
+                    text = stringResource(R.string.settings_unlock_all_features),
                     color = Color.White.copy(alpha = 0.8f),
                     style = AppTypography.bodySmall
                 )

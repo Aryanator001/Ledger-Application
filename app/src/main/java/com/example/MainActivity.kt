@@ -1,10 +1,13 @@
 package com.example
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.LocalActivity
@@ -102,7 +106,7 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
 
 val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
 
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var securityViewModel: SecurityViewModel
     private var isThemeLoaded = false
 
@@ -165,6 +169,7 @@ class MainActivity : FragmentActivity() {
                 "System"
             }
         }
+
 
         // Use explicit SystemBarStyle (not the default auto) so the OnPreDrawListener
         // auto-detector is never installed — otherwise it continuously overrides the
@@ -312,9 +317,16 @@ fun MainScreen(
                 ) {
                     bottomNavItems.forEach { screen ->
                         val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        val navLabel = when (screen) {
+                            Route.Home         -> stringResource(R.string.nav_dashboard)
+                            Route.Transactions -> stringResource(R.string.nav_transactions)
+                            Route.Analytics    -> stringResource(R.string.nav_analytics)
+                            Route.Settings     -> stringResource(R.string.nav_settings)
+                            else               -> screen.title
+                        }
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.title) },
-                            label = { Text(screen.title, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                            label = { Text(navLabel, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                             selected = isSelected,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.appColors.tabActive,

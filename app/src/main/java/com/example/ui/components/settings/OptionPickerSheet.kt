@@ -11,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
@@ -87,7 +89,7 @@ fun OptionPickerSheet(
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("Cancel", color = MaterialTheme.appColors.primary, style = AppTypography.bodyLarge)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.appColors.primary, style = AppTypography.bodyLarge)
             }
         }
     }
