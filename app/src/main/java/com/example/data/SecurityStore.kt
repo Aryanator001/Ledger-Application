@@ -11,13 +11,35 @@ class SecurityStore(context: Context) {
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val sharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        "security_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences = createEncryptedPrefs(context, masterKey)
+
+    companion object {
+        private fun createEncryptedPrefs(
+            context: Context,
+            masterKey: MasterKey
+        ): android.content.SharedPreferences {
+            // On reinstall, stale ciphertext on disk can't be decrypted by the new Keystore key.
+            // Wipe the file and retry so the app launches instead of crashing.
+            return try {
+                EncryptedSharedPreferences.create(
+                    context,
+                    "security_prefs",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (e: Exception) {
+                context.deleteSharedPreferences("security_prefs")
+                EncryptedSharedPreferences.create(
+                    context,
+                    "security_prefs",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            }
+        }
+    }
 
     private val _isAppLockEnabled = MutableStateFlow(sharedPreferences.getBoolean("app_lock_enabled", false))
     val isAppLockEnabled: StateFlow<Boolean> = _isAppLockEnabled

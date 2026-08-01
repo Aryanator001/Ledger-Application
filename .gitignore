@@ -14,8 +14,7 @@
 .externalNativeBuild
 .cxx
 local.properties
-.env
-debug.keystore
+cladebug.keystore
 /app/google-services.json
 # IntelliJ IDEA / Android Studio files
 .idea/

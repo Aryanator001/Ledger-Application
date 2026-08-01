@@ -3,6 +3,7 @@ package com.example.data
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.UUID
 
@@ -21,6 +22,10 @@ import java.util.UUID
             childColumns = ["account_id"],
             onDelete = ForeignKey.SET_DEFAULT
         )
+    ],
+    indices = [
+        Index(value = ["date"], name = "idx_txn_date"),
+        Index(value = ["title"], name = "idx_txn_title")
     ]
 )
 data class Transaction(

@@ -21,6 +21,9 @@ import kotlinx.coroutines.delay
 
 import com.example.ai.validation.TransactionValidator
 import com.example.ai.query.QueryEngine
+import com.ledger.query.ai.SchemaHint
+import com.ledger.query.engine.QueryEngine as NewQueryEngine
+import com.ledger.query.exec.QueryResult as NewQueryResult
 
 class AiTransactionViewModel(
     private val transactionRepository: TransactionRepository,
@@ -30,8 +33,19 @@ class AiTransactionViewModel(
     private val normalizer: TranscriptNormalizer = TranscriptNormalizer(),
     private val resolver: CandidateResolver = CandidateResolver(),
     private val transactionValidator: TransactionValidator,
-    private val queryEngine: QueryEngine
+    private val queryEngine: QueryEngine,
+    private val newQueryEngine: NewQueryEngine? = null,
+    private val knownCategoryNames: List<String> = listOf("food", "rent", "shopping", "general", "transport", "salary")
 ) : ViewModel() {
+
+    /** In-memory entity name cache — refreshed after each commit and on init. */
+    @Volatile private var entityNameCache: List<String> = emptyList()
+
+    init {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            entityNameCache = try { transactionRepository.getDistinctTitles() } catch (e: Exception) { emptyList() }
+        }
+    }
 
     private val _state = MutableStateFlow<AiState>(AiState.Idle)
     val state: StateFlow<AiState> = _state.asStateFlow()
@@ -44,6 +58,21 @@ class AiTransactionViewModel(
     /** Reverts state to idle if listening is canceled */
     fun onListeningCancelled() {
         _state.value = AiState.Idle
+    }
+
+    /**
+     * Called when the user explicitly taps the Stop button.
+     * Immediately hides the waveform/stop button so the UI feels responsive.
+     * For Sarvam, the upload still completes in background and onTranscriptReady()
+     * will override this state when the final transcript arrives.
+     * For Android native, stop() already delivered onFinal synchronously, so
+     * the state will already be past Transcribing when this runs (no-op).
+     */
+    fun onStopPressed() {
+        val current = _state.value
+        if (current !is AiState.Listening && current !is AiState.Transcribing) return
+        val partial = (current as? AiState.Transcribing)?.partialText ?: ""
+        _state.value = AiState.TranscriptReady(partial)
     }
 
     /** Updates state with partial transcript */
@@ -74,12 +103,68 @@ class AiTransactionViewModel(
                 _state.value = AiState.QueryProcessing(transcript)
                 viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                     try {
-                        when (val queryResult = queryEngine.process(transcript)) {
-                            is com.example.ai.query.QueryResult.Success -> {
-                                _state.value = AiState.QueryAnswered(queryResult.response)
+                        if (newQueryEngine != null) {
+                            val schema = SchemaHint(
+                                knownEntities = entityNameCache,
+                                knownCategories = knownCategoryNames,
+                                today = java.time.LocalDate.now()
+                            )
+                            when (val r = newQueryEngine.ask(transcript, schema)) {
+                                is NewQueryResult.Scalar -> {
+                                    _state.value = AiState.QueryAnswered(QueryResponse(
+                                        headline = r.label,
+                                        totalAmount = r.amount,
+                                        transactionCount = r.txnCount,
+                                        transactionIds = emptyList(),
+                                        query = ParsedQuery(null, null, null, null, null, transcript)
+                                    ))
+                                }
+                                is NewQueryResult.Grouped -> {
+                                    val headline = r.buckets.joinToString(" | ") { "${it.key}: ₹${it.amount.toLong()}" }
+                                    _state.value = AiState.QueryAnswered(QueryResponse(
+                                        headline = headline.ifBlank { r.label },
+                                        totalAmount = r.buckets.sumOf { it.amount },
+                                        transactionCount = r.buckets.sumOf { it.count },
+                                        transactionIds = emptyList(),
+                                        query = ParsedQuery(null, null, null, null, null, transcript)
+                                    ))
+                                }
+                                is NewQueryResult.Analysis -> {
+                                    _state.value = AiState.QueryAnswered(QueryResponse(
+                                        headline = r.narrative,
+                                        totalAmount = 0.0,
+                                        transactionCount = 0,
+                                        transactionIds = emptyList(),
+                                        query = ParsedQuery(null, null, null, null, null, transcript)
+                                    ))
+                                }
+                                is NewQueryResult.NeedsClarification -> {
+                                    val headline = "${r.question}: ${r.options.take(4).joinToString(" / ")}"
+                                    _state.value = AiState.QueryAnswered(QueryResponse(
+                                        headline = headline,
+                                        totalAmount = 0.0,
+                                        transactionCount = 0,
+                                        transactionIds = emptyList(),
+                                        query = ParsedQuery(null, null, null, null, null, transcript)
+                                    ))
+                                }
+                                is NewQueryResult.Failed -> {
+                                    _state.value = AiState.Failed(
+                                        FailureReason.QueryEngineError(r.reason), transcript
+                                    )
+                                }
+                                else -> _state.value = AiState.Failed(
+                                    FailureReason.QueryEngineError("Unexpected result type"), transcript
+                                )
                             }
-                            is com.example.ai.query.QueryResult.Failure -> {
-                                _state.value = AiState.Failed(queryResult.reason, transcript)
+                        } else {
+                            when (val queryResult = queryEngine.process(transcript)) {
+                                is com.example.ai.query.QueryResult.Success -> {
+                                    _state.value = AiState.QueryAnswered(queryResult.response)
+                                }
+                                is com.example.ai.query.QueryResult.Failure -> {
+                                    _state.value = AiState.Failed(queryResult.reason, transcript)
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -232,6 +317,10 @@ class AiTransactionViewModel(
     fun markCommitted(transactionId: String, candidate: CandidateTransaction) {
         _state.value = AiState.Committed(transactionId, candidate)
         viewModelScope.launch {
+            // Refresh entity cache so new names are queryable immediately
+            entityNameCache = try {
+                transactionRepository.getDistinctTitles()
+            } catch (e: Exception) { entityNameCache }
             delay(1500L)  // Allow toast to be visible.
             if (_state.value is AiState.Committed) {
                 _state.value = AiState.Idle

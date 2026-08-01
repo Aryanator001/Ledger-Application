@@ -8,8 +8,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.analytics.AnalyticsCache
 import com.example.analytics.AnalyticsCacheDao
+import com.ledger.query.exec.QueryPlanCacheDao
+import com.ledger.query.exec.QueryPlanCacheEntity
 
-@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class, UserProfile::class, LedgerScope::class], version = 10, exportSchema = false)
+@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class, UserProfile::class, LedgerScope::class, QueryPlanCacheEntity::class], version = 11, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
@@ -18,6 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun analyticsCacheDao(): AnalyticsCacheDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun ledgerScopeDao(): LedgerScopeDao
+    abstract fun queryPlanCacheDao(): QueryPlanCacheDao
 
     companion object {
         @Volatile
@@ -144,6 +147,34 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `query_plan_cache` (
+                        `template` TEXT NOT NULL PRIMARY KEY,
+                        `direction` TEXT NOT NULL,
+                        `metric` TEXT NOT NULL,
+                        `group_by` TEXT NOT NULL,
+                        `uses_entity` INTEGER NOT NULL,
+                        `uses_category` INTEGER NOT NULL,
+                        `limit_val` INTEGER,
+                        `hit_count` INTEGER NOT NULL DEFAULT 0,
+                        `created_at` INTEGER NOT NULL,
+                        `last_used_at` INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `idx_qpc_last_used` ON `query_plan_cache` (`last_used_at`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `idx_txn_date` ON `transactions` (`date`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `idx_txn_title` ON `transactions` (`title`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -151,7 +182,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ledger_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

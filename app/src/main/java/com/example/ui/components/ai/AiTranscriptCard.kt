@@ -105,6 +105,24 @@ fun AiTranscriptCard(
                             color = MaterialTheme.appColors.primary
                         )
                     }
+                    is AiState.TranscriptReady -> {
+                        // Blank transcript = Sarvam upload in progress; show spinner.
+                        // Non-blank = already routed (transient state, rarely seen).
+                        if (state.transcript.isBlank()) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.appColors.primary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = null,
+                                tint = MaterialTheme.appColors.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                     is AiState.Listening,
                     is AiState.Transcribing -> {
                         RecordingWaveform()
@@ -128,7 +146,7 @@ fun AiTranscriptCard(
                     val (label, body) = when (state) {
                         is AiState.Listening -> "Listening..." to ""
                         is AiState.Transcribing -> "Hearing you..." to state.partialText
-                        is AiState.TranscriptReady -> "Got it" to state.transcript
+                        is AiState.TranscriptReady -> if (state.transcript.isBlank()) "Processing..." to "" else "Got it" to state.transcript
                         is AiState.IntentRouting -> "Understanding..." to state.transcript
                         is AiState.Extracting -> {
                             val processingLabel = when (state.intent) {
@@ -144,9 +162,10 @@ fun AiTranscriptCard(
 
                     Text(
                         text = label,
-                        color = when (state) {
-                            is AiState.Failed -> MaterialTheme.appColors.textTertiary
-                            is AiState.Extracting, is AiState.IntentRouting -> MaterialTheme.appColors.primary
+                        color = when {
+                            state is AiState.Failed -> MaterialTheme.appColors.textTertiary
+                            state is AiState.Extracting || state is AiState.IntentRouting -> MaterialTheme.appColors.primary
+                            state is AiState.TranscriptReady && state.transcript.isBlank() -> MaterialTheme.appColors.primary
                             else -> MaterialTheme.appColors.textSecondary
                         },
                         fontSize = 12.sp

@@ -177,6 +177,171 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY date DESC")
     suspend fun getAllTransactionsOnce(ledgerScopeId: String): List<Transaction>
+
+    // ─── Execution-layer aggregate queries (com.ledger.query.exec) ──────────
+
+    /**
+     * Parameterized scalar aggregate — SUM or COUNT path.
+     * For NET direction use execNetScalar; pass null dirType for UNSPECIFIED.
+     */
+    @Query("""
+        SELECT SUM(amount) AS total, COUNT(*) AS cnt
+        FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execScalar(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): ExecScalarRow?
+
+    /** NET: SUM(IN) − SUM(OUT) over all transaction types. */
+    @Query("""
+        SELECT SUM(CASE WHEN type IN ('INCOME','CREDIT') THEN amount ELSE -amount END) AS total,
+               COUNT(*) AS cnt
+        FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execNetScalar(
+        entityPrefix: String?,
+        categoryId: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): ExecScalarRow?
+
+    @Query("""
+        SELECT AVG(amount) FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execAvg(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): Double?
+
+    @Query("""
+        SELECT MAX(amount) FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execMax(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): Double?
+
+    @Query("""
+        SELECT MIN(amount) FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execMin(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): Double?
+
+    @Query("""
+        SELECT * FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+        ORDER BY date DESC
+        LIMIT :limit
+    """)
+    suspend fun execList(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String,
+        limit: Int
+    ): List<Transaction>
+
+    @Query("""
+        SELECT category_id, SUM(amount) AS total, COUNT(*) AS cnt
+        FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+        GROUP BY category_id
+        ORDER BY total DESC
+    """)
+    suspend fun execGroupByCategory(
+        entityPrefix: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): List<ExecCategoryGroupRow>
+
+    @Query("""
+        SELECT title, SUM(amount) AS total, COUNT(*) AS cnt
+        FROM transactions
+        WHERE (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+        GROUP BY title
+        ORDER BY total DESC
+        LIMIT :limit
+    """)
+    suspend fun execGroupByEntity(
+        categoryId: String?,
+        dirType: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String,
+        limit: Int
+    ): List<ExecEntityGroupRow>
 }
 
 data class IncomeExpenseTotalsRow(
@@ -193,4 +358,18 @@ data class EntityBalanceRow(
     val netAmount: Double?,
     val rowCount: Int,
     val idList: String?
+)
+
+data class ExecScalarRow(val total: Double?, val cnt: Int)
+
+data class ExecCategoryGroupRow(
+    @androidx.room.ColumnInfo(name = "category_id") val categoryId: String,
+    val total: Double,
+    val cnt: Int
+)
+
+data class ExecEntityGroupRow(
+    val title: String,
+    val total: Double,
+    val cnt: Int
 )

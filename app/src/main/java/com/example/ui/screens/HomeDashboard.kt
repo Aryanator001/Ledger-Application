@@ -184,6 +184,11 @@ fun HomeDashboard(
 
         fun stopListening() {
             sttProvider.stop()
+            // Immediately transition out of Listening/Transcribing so the waveform
+            // and stop button disappear. Sarvam's upload still finishes in background
+            // and onTranscriptReady() will override this state when the result arrives.
+            // For Android native, stop() already fired onFinal synchronously so this is a no-op.
+            aiViewModel.onStopPressed()
         }
 
         fun dismissAi() {
@@ -314,6 +319,15 @@ fun HomeDashboard(
                 onMicClick = {
                     when (aiState) {
                         is AiState.Listening, is AiState.Transcribing -> stopListening()
+                        is AiState.TranscriptReady -> {
+                            // Blank = Sarvam upload still in progress. Route to dismissAi() so
+                            // the upload is cancelled cleanly via sarvamProvider.cancel()
+                            // (isCancelled=true + OkHttp call cancel). Without this, the else
+                            // branch fires startListening() which calls SarvamSttProvider.start()
+                            // → stopInternals(discard=true) → isCancelled=true mid-upload, silently
+                            // dropping the transcript and leaving the state stuck on "Got it" forever.
+                            dismissAi()
+                        }
                         is AiState.ConfirmationRequired -> {
                             // If card is showing and user taps mic, dismiss and start new recording.
                             dismissAi()
@@ -321,13 +335,14 @@ fun HomeDashboard(
                         else -> startListening()
                     }
                 },
-                onAddClick = { 
+                onAddClick = {
                     prompt = ""
                     parsedAmount = null
                     showTransactionSheet = true
                 },
                 placeholder = stringResource(R.string.chat_input_placeholder_alt),
-                isListening = aiState is AiState.Listening || aiState is AiState.Transcribing
+                isListening = aiState is AiState.Listening || aiState is AiState.Transcribing ||
+                    (aiState is AiState.TranscriptReady && (aiState as AiState.TranscriptReady).transcript.isBlank())
             )
         }
 

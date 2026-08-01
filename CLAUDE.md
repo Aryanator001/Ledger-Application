@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Copy `.env.example` to `.env` and set your API keys:
 ```
 GEMINI_API_KEY=your_key_here
-SARVAM_API_KEY=your_sarvam_key_here   # Primary STT (saaras:v3); Google STT is the fallback
+SARVAM_API_KEY=your_sarvam_key_here   # Primary STT (saaras:v3); Android native STT is the fallback
 ```
 
 The debug signing config in `app/build.gradle.kts` points to `~/.android/debug.keystore`. If that file doesn't exist, remove the `signingConfig = signingConfigs.getByName("debugConfig")` line from the `debug` build type before building.
@@ -27,6 +27,10 @@ Release builds require env vars: `KEYSTORE_PATH`, `STORE_PASSWORD`, `KEY_PASSWOR
 # Single test
 ./gradlew testDebugUnitTest --tests "com.example.ExampleUnitTest.testApi"
 # Note: ExampleUnitTest.testApi makes a live Gemini network call — requires GEMINI_API_KEY in .env and internet access
+
+# New query engine tests (JVM, no device needed)
+./gradlew testDebugUnitTest --tests "com.ledger.query.core.*"
+./gradlew testDebugUnitTest --tests "com.ledger.query.engine.*"
 
 # Instrumented tests (requires connected device/emulator)
 ./gradlew connectedAndroidTest
@@ -54,25 +58,36 @@ Single-module Android app. No Hilt/Dagger — all dependencies are wired manuall
 | `com.example.ui` | Compose screens, components, ViewModels, navigation, theme |
 | `com.example.ui.analytics` | `AnalyticsViewModel`, `GeminiInsightsService`, `ReportExporter` |
 | `com.example.ui.security` | `LockScreen`, `SecuritySettingsScreen`, `SecurityViewModel` |
+| `com.ledger.query.core` | New query engine: `QueryFrame`, `QueryRouter`, `Lexicon`, `TimeExpressionParser` |
+| `com.ledger.query.ai` | AI query tier: `AiPlanner` interface + `GeminiPlannerImpl` + `SchemaHint` (in `GeminiPlanner.kt`); `AiAnalyst` interface + `GeminiAnalystImpl` (in `GeminiAnalyst.kt`) |
+| `com.ledger.query.engine` | `QueryEngine` (tiered orchestrator), `QueryEngineFactory` |
+| `com.ledger.query.exec` | `RoomQueryExecutor`, `PlanCache` (Room entity+DAO), `Templater`, `LedgerLog`, `QueryResult` |
 
 ### AI Pipeline
 
 The AI feature is the most complex part. A voice transcript flows through these stages, each backed by a state in `AiState`:
 
 ```
-SttProvider (Android native STT)
+DualSttProvider (Sarvam primary → AndroidNativeSttProvider fallback on network/API error)
   └─> RuleBasedIntentClassifier  (English / Hindi / Hinglish keyword rules)
         ├─> [Transaction] GeminiTransactionExtractor (Gemini Flash REST)
         │     └─> TransactionValidator → high confidence = AutoCommitting
         │                               low confidence = ConfirmationRequired
-        └─> [Query] QueryTriageRouter
+        └─> [Query] QueryTriageRouter (legacy) / com.ledger QueryEngine (new)
+                  Legacy path:
                   ├─> LocalQueryParser (regex/keyword, confidence >= 0.70 → skip Gemini)
-                  └─> GeminiQueryParser (fallback)
-                        └─> QueryEngine → AnalyticsRepository (cache) → Room → FuzzyEntityMatcher
-                              └─> GeminiQuerySynthesizer (headline) or QueryResponseFormatter (fallback)
+                  └─> GeminiQueryParser → QueryEngine → AnalyticsRepository → FuzzyEntityMatcher
+                        └─> GeminiQuerySynthesizer (headline) or QueryResponseFormatter (fallback)
+                  New path (com.ledger.query.engine.QueryEngine):
+                  ├─> QueryRouter → Tier.LOCAL → RoomQueryExecutor (no AI)
+                  ├─> QueryRouter → Tier.AI_PLANNER → GeminiPlannerImpl → RoomQueryExecutor
+                  ├─> QueryRouter → Tier.AI_ANALYST → GeminiAnalystImpl (synthesis over raw facts)
+                  └─> QueryRouter → Tier.CLARIFY → disambiguation response
 ```
 
-`AiTransactionViewModel` owns the `AiState` `StateFlow` and drives this entire pipeline. All Gemini calls are plain OkHttp REST with `org.json`; the API key comes from `BuildConfig.GEMINI_API_KEY` via the secrets Gradle plugin.
+`AiTransactionViewModel` owns the `AiState` `StateFlow` and drives this entire pipeline. It carries both `queryEngine` (legacy `com.example.ai.query.QueryEngine`) and `newQueryEngine` (nullable `com.ledger.query.engine.QueryEngine`). The new engine is constructed by `QueryEngineFactory` when `database`, `scopeIdProvider`, and `geminiApiKeyProvider` are all available. All Gemini calls are plain OkHttp REST with `org.json`; the API key comes from `BuildConfig.GEMINI_API_KEY` via the secrets Gradle plugin.
+
+**New query engine tiers** (`com.ledger.query.core.Tier`): `LOCAL` executes a deterministic SQL plan without any AI call; `AI_PLANNER` uses Gemini to produce a `QueryPlan` (cached in `query_plan_cache` Room table); `AI_ANALYST` passes already-computed facts to Gemini for natural-language synthesis; `CLARIFY` returns an ambiguity-resolution prompt. `QueryRouter` decides the tier based on `QueryFrame` confidence.
 
 ### Analytics Cache
 
@@ -80,13 +95,13 @@ SttProvider (Android native STT)
 
 ### Data Layer
 
-Room database (`ledger_database`, v9). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`, `UserProfile`, `LedgerScope`. All migrations live in `AppDatabase`. Migration path: 1→2, 4→5, 5→6, 6→8, 8→9 (versions 3 and 7 were skipped — do not create migrations for those numbers). `fallbackToDestructiveMigration` is enabled as a last resort. `Budget` tracks per-category spending limits; `BudgetRepository` is wired on `LedgerApplication`.
+Room database (`ledger_database`, v11). Entities: `Transaction`, `Category`, `Account`, `Budget`, `AnalyticsCache`, `UserProfile`, `LedgerScope`, `QueryPlanCacheEntity`. All migrations live in `AppDatabase`. Migration path: 1→2, 4→5, 5→6, 6→8, 8→9, 9→10, 10→11 (versions 3 and 7 were skipped — do not create migrations for those numbers). Migration 9→10 adds business profile columns (`businessType`, `address`, `website`, `gstNumber`, `panNumber`) to `user_profiles`. Migration 10→11 creates the `query_plan_cache` table for the new query engine's plan cache. `fallbackToDestructiveMigration` is enabled as a last resort. `Budget` tracks per-category spending limits; `BudgetRepository` is wired on `LedgerApplication`.
 
 `TransactionRepository` is the single write path for transactions; it hooks `AnalyticsCacheUpdater` on each mutation.
 
-**Soft-delete pattern**: `Transaction`, `Account`, and `Budget` all carry `is_deleted: Boolean` and `last_updated: Long`. Logical deletes set `is_deleted = true` rather than physically removing rows — DAOs must filter `WHERE is_deleted = 0` in queries.
+**Soft-delete pattern**: `Transaction`, `Account`, and `Budget` all carry `is_deleted: Boolean` and `last_updated: Long`. Logical deletes set `is_deleted = true` rather than physically removing rows — DAOs must filter `WHERE is_deleted = 0` in queries. `Transaction` also has a separate `is_archived: Boolean` field (for UI-level archiving); archived rows are not soft-deleted.
 
-**Budget amounts**: `Budget.limitAmount` is stored as a `Long` in paise (×100) to avoid floating-point errors. Convert ÷ 100 before displaying.
+**Amount storage**: `Transaction.amount` is a `Double` in the user's currency unit (not paise). Only `Budget.limitAmount` is stored as a `Long` in paise (×100) to avoid floating-point errors — convert ÷ 100 before displaying budgets.
 
 **Persistence stores** (two separate mechanisms):
 - `UserPreferences` (DataStore `"settings"`) — theme, currency, onboarding flag, `active_user_id`, `active_ledger_scope_id`.
