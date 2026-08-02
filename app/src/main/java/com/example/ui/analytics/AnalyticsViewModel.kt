@@ -200,10 +200,7 @@ class AnalyticsViewModel(
         val allTx = repository.getAllTransactionsOnce().filter { !it.isArchived }
         val categories = repository.allCategories.first().associateBy { it.id }
 
-        val receivables = mutableListOf<OutstandingItem>()
-        val payables = mutableListOf<OutstandingItem>()
-
-        allTx.forEach { tx ->
+        val items = allTx.map { tx ->
             val catName = categories[tx.categoryId]?.name?.lowercase() ?: ""
             val searchText = listOf(
                 tx.title.lowercase(),
@@ -211,26 +208,27 @@ class AnalyticsViewModel(
                 tx.tags.lowercase(),
                 catName
             ).joinToString(" ")
-
-            val isReceivable = receivableKeywords.any { searchText.contains(it) }
-            val isPayable = payableKeywords.any { searchText.contains(it) }
-
-            val item = OutstandingItem(
-                id = tx.id,
-                partyName = tx.title,
-                amountPaise = (tx.amount * 100).roundToLong(),
-                date = tx.date,
-                note = tx.description
+            Triple(
+                tx,
+                OutstandingItem(
+                    id = tx.id,
+                    partyName = tx.title,
+                    amountPaise = (tx.amount * 100).roundToLong(),
+                    date = tx.date,
+                    note = tx.description
+                ),
+                searchText
             )
-
-            when {
-                isReceivable -> receivables.add(item)
-                isPayable -> payables.add(item)
-            }
         }
 
-        _receivables.value = receivables.sortedByDescending { it.date }
-        _payables.value = payables.sortedByDescending { it.date }
+        _receivables.value = items
+            .filter { (_, _, searchText) -> receivableKeywords.any { searchText.contains(it) } }
+            .map { (_, item, _) -> item }
+            .sortedByDescending { it.date }
+        _payables.value = items
+            .filter { (_, _, searchText) -> payableKeywords.any { searchText.contains(it) } }
+            .map { (_, item, _) -> item }
+            .sortedByDescending { it.date }
     }
 
     private suspend fun loadTrends(startMs: Long, endMs: Long) {

@@ -40,6 +40,8 @@ class LocalQueryParser {
         "pichle mahene" to TimeToken.LAST_MONTH
     )
 
+    private val sortedTimeKeywords = timeKeywords.keys.sortedByDescending { it.length }
+
     private val expenseVerbs = setOf(
         "diya", "diye", "diya tha", "diye the", "dii", "spent", "kharch", "paid",
         "kharcha", "kharche"
@@ -124,8 +126,7 @@ class LocalQueryParser {
 
     private fun detectTimeToken(text: String): TimeToken {
         // Multi-word keys checked first (longest match wins)
-        val sortedKeys = timeKeywords.keys.sortedByDescending { it.length }
-        for (key in sortedKeys) {
+        for (key in sortedTimeKeywords) {
             if (text.contains(key)) return timeKeywords.getValue(key)
         }
         return TimeToken.LIFETIME

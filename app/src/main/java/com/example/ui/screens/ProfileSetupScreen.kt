@@ -127,7 +127,7 @@ fun ProfileSetupScreen(
                 Text(
                     text = initials,
                     style = AppTypography.headline2,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
 

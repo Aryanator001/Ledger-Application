@@ -118,9 +118,9 @@ class QueryRouter(
 
         // 1. Normalize
         val normalized = rawQuery.lowercase()
-            .replace(Regex("[?!.,;:\"'₹]"), " ")
+            .replace(PUNCTUATION_RE, " ")
             .trim()
-            .replace(Regex("\\s+"), " ")
+            .replace(WHITESPACE_RE, " ")
 
         // 2. Tokenize
         val tokens = normalized.split(" ").filter { it.isNotBlank() }
@@ -410,5 +410,10 @@ class QueryRouter(
             hasGujaratiScript || hasGu -> Lang.GU
             else -> Lang.EN
         }
+    }
+
+    companion object {
+        private val PUNCTUATION_RE = Regex("[?!.,;:\"'₹]")
+        private val WHITESPACE_RE  = Regex("\\s+")
     }
 }

@@ -179,7 +179,7 @@ fun GeneralSettingsScreen(
                 )
                 GeneralSettingsRow(
                     label = stringResource(R.string.general_settings_clear_cache_label),
-                    labelColor = Color.Red,
+                    labelColor = MaterialTheme.appColors.error,
                     showChevron = false,
                     onClick = { showClearCacheAlert = true }
                 )
@@ -305,7 +305,7 @@ fun GeneralSettingsScreen(
                         viewModel.clearCache()
                         showClearCacheAlert = false
                     }) {
-                        Text(stringResource(R.string.action_confirm), color = Color.Red)
+                        Text(stringResource(R.string.action_confirm), color = MaterialTheme.appColors.error)
                     }
                 },
                 dismissButton = {
@@ -401,7 +401,7 @@ fun GeneralSettingsToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.appColors.primary
             )
         )

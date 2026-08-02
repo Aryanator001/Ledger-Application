@@ -43,6 +43,8 @@ class QueryResponseFormatter(
                 Direction.EXPENSE -> "given to"
                 Direction.INCOME -> "received from"
                 Direction.TRANSFER -> "transferred with"
+                Direction.CREDIT -> "receivable from"
+                Direction.DEBIT -> "payable to"
             }
             return "Total $amountText $verb ${query.entity.replaceFirstChar { it.uppercase() }}$timeSuffix"
         }
@@ -59,6 +61,8 @@ class QueryResponseFormatter(
                 Direction.EXPENSE -> "Total expense"
                 Direction.INCOME -> "Total income"
                 Direction.TRANSFER -> "Total transfers"
+                Direction.CREDIT -> "Total receivables"
+                Direction.DEBIT -> "Total payables"
             }
             return "$label$timeSuffix: $amountText ($transactionCount transactions)"
         }

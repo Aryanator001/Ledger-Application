@@ -172,13 +172,13 @@ fun UpgradeBanner(onClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Stars,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -187,13 +187,13 @@ fun UpgradeBanner(onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.settings_upgrade_to_pro),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = AppTypography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = stringResource(R.string.settings_unlock_all_features),
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     style = AppTypography.bodySmall
                 )
             }
@@ -201,7 +201,7 @@ fun UpgradeBanner(onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
+                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -264,7 +264,7 @@ fun SettingsRow(
                 ) {
                     Text(
                         text = rightBadge,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         style = AppTypography.caption,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )

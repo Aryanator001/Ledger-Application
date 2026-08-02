@@ -173,6 +173,8 @@ class QueryEngine(
         Direction.INCOME -> "INCOME"
         Direction.EXPENSE -> "EXPENSE"
         Direction.TRANSFER -> "EXPENSE"
+        Direction.CREDIT -> "CREDIT"
+        Direction.DEBIT -> "DEBIT"
     }
 }
 

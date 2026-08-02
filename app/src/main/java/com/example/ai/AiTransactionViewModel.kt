@@ -15,10 +15,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.example.ai.model.ConfidenceScore
-import com.example.ai.model.ConfidenceTier
 import kotlinx.coroutines.delay
 
+import com.example.ai.extract.PartialExtractionException
 import com.example.ai.validation.TransactionValidator
 import com.example.ai.query.QueryEngine
 import com.ledger.query.ai.SchemaHint
@@ -187,12 +186,22 @@ class AiTransactionViewModel(
         viewModelScope.launch {
             val normalized = normalizer.normalize(transcript)
             try {
-                val candidate = transactionExtractor.extract(normalized, transcript)
-                if (candidate == null) {
+                val rawCandidate = transactionExtractor.extract(normalized, transcript)
+                if (rawCandidate == null) {
                     _state.value = AiState.Failed(FailureReason.ExtractionFailed("No candidate generated"), transcript)
                     return@launch
                 }
-                
+
+                // Entity fallback: if Gemini returned null entity, derive one from notes or use "General"
+                val resolvedEntity = rawCandidate.entity?.takeIf { it.isNotBlank() }
+                    ?: rawCandidate.notes?.split(" ")?.firstOrNull()?.replaceFirstChar { it.uppercase() }
+                    ?: "General"
+                val candidate = if (resolvedEntity != rawCandidate.entity) {
+                    rawCandidate.copy(entity = resolvedEntity)
+                } else {
+                    rawCandidate
+                }
+
                 val resolvedCategoryId = resolver.resolveCategoryId(candidate.categoryHint)
                 val fieldErrors = transactionValidator.validateFields(candidate)
                 val duplicateError = transactionValidator.checkDuplicate(candidate, resolvedCategoryId)
@@ -205,10 +214,26 @@ class AiTransactionViewModel(
                 } else {
                     _state.value = AiState.ConfirmationRequired(candidate, allErrors)
                 }
+            } catch (e: PartialExtractionException) {
+                val prefillType = when (e.direction) {
+                    Direction.INCOME -> "INCOME"
+                    Direction.CREDIT -> "CREDIT"
+                    Direction.DEBIT -> "DEBIT"
+                    else -> "EXPENSE"
+                }
+                _state.value = AiState.ManualFallback(
+                    prefillAmount = e.amount,
+                    prefillType = if (e.direction != null) prefillType else null,
+                    rawTranscript = transcript
+                )
             } catch (e: Exception) {
                 _state.value = AiState.Failed(FailureReason.ExtractionFailed(e.message), transcript)
             }
         }
+    }
+
+    fun onManualFallbackDismissed() {
+        _state.value = AiState.Idle
     }
 
     /**

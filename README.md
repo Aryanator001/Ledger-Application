@@ -5,7 +5,7 @@ A smart, AI-powered accounting and expense tracking application built for the mo
 #Key Features
 
 * 🎙️ Voice-to-Transaction:** Add expenses or income by simply speaking. Supports multilingual input (English, Hindi, Hinglish).
-* 🤖 AI Extraction:** Powered by **Google Gemini 1.5 Flash** to precisely extract amounts, categories, entities, and notes from raw audio transcripts.
+* 🤖 AI Extraction:** Powered by **Google Gemini 3.5 Flash** to precisely extract amounts, categories, entities, and notes from raw audio transcripts.
 * 🔍 Natural Language Queries:** Ask questions like *"Total kharch kitna hua?"* or *"How much did I spend on food this month?"* and get instant answers.
 * 🔒 Privacy & Security:** Built-in Biometric authentication, App Lock, and screenshot protection (`FLAG_SECURE`).
 * 📈 Smart Analytics:** Real-time financial insights with a high-performance analytics caching layer.
@@ -16,7 +16,7 @@ A smart, AI-powered accounting and expense tracking application built for the mo
 
 *   **Language:** Kotlin
 *   **UI Framework:** Jetpack Compose
-*   **AI Engine:** Google Gemini 1.5 Flash (via REST API)
+*   **AI Engine:** Google Gemini 3.5 Flash (via REST API)
 *   **STT (Speech-to-Text):** Android Native Speech Recognition
 *   **Database:** Room (SQLite) for persistence
 *   **Key-Value Store:** Jetpack DataStore for preferences and security settings

@@ -48,6 +48,8 @@ class GeminiQuerySynthesizer(
             Direction.EXPENSE -> "expense"
             Direction.INCOME -> "income"
             Direction.TRANSFER -> "transfer"
+            Direction.CREDIT -> "credit (receivable)"
+            Direction.DEBIT -> "debit (payable)"
             null -> "net balance"
         }
 

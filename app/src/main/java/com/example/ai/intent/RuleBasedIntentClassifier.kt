@@ -60,10 +60,14 @@ class RuleBasedIntentClassifier(
 
     // Strong query words that override transaction verbs.
     // e.g. "kitna diya" = "how much did I give" = QUERY about past data, not a new transaction.
+    // Strong query words override transaction signals when present.
+    // Time words "aaj"/"kal"/"parso" are intentionally excluded — they appear in both
+    // food/expense sentences ("aaj maine pizza khaya") and queries ("aaj kitna kharch hua").
+    // They contribute to queryHits via hinglishQueryMarkers but do not force Query intent alone.
     private val strongQueryWords = setOf(
         "kitna", "kitne", "kitni", "kya", "how", "what", "total", "balance",
         "batao", "dikhao", "hisab", "hisaab", "baki", "baaki", "much", "owe", "remaining",
-        "aaj", "kal", "pichle", "pichhle", "history", "khata", "summary", "report",
+        "pichle", "pichhle", "history", "khata", "summary", "report",
         "outstanding", "pending", "due", "breakdown", "analysis"
     )
 
@@ -96,7 +100,7 @@ class RuleBasedIntentClassifier(
         transactionMarkers: Set<String>
     ): IntentResult {
         val words = transcript.lowercase()
-            .split(Regex("[^a-z\\u0900-\\u097F]+"))
+            .split(WORD_SPLIT_REGEX)
             .filter { it.isNotBlank() }
 
         val hasQuestionMark = transcript.contains("?")
@@ -120,5 +124,9 @@ class RuleBasedIntentClassifier(
         }
 
         return IntentResult(intent = intent, language = language, confidence = confidence)
+    }
+
+    companion object {
+        private val WORD_SPLIT_REGEX = Regex("[^a-z\\u0900-\\u097F]+")
     }
 }

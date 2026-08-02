@@ -36,7 +36,7 @@ class AnalyticsService(
 
     // All amounts returned in paise (Long). UI layer divides by 100.
 
-    suspend fun getMonthlySpend(month: Int, year: Int): Long = withContext(Dispatchers.IO) {
+    private fun monthRange(month: Int, year: Int): Pair<Long, Long> {
         val cal = Calendar.getInstance()
         cal.clear()
         cal.set(Calendar.YEAR, year)
@@ -47,40 +47,25 @@ class AnalyticsService(
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
         val startMs = cal.timeInMillis
-
         cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
         cal.set(Calendar.HOUR_OF_DAY, 23)
         cal.set(Calendar.MINUTE, 59)
         cal.set(Calendar.SECOND, 59)
         cal.set(Calendar.MILLISECOND, 999)
-        val endMs = cal.timeInMillis
+        return Pair(startMs, cal.timeInMillis)
+    }
 
-        val transactions = transactionRepo.getByDateRange(startMs, endMs)
-        transactions.filter { it.type == "EXPENSE" }
+    suspend fun getMonthlySpend(month: Int, year: Int): Long = withContext(Dispatchers.IO) {
+        val (startMs, endMs) = monthRange(month, year)
+        transactionRepo.getByDateRange(startMs, endMs)
+            .filter { it.type == "EXPENSE" }
             .sumOf { (it.amount * 100).toLong() }
     }
 
     suspend fun getMonthlyIncome(month: Int, year: Int): Long = withContext(Dispatchers.IO) {
-        val cal = Calendar.getInstance()
-        cal.clear()
-        cal.set(Calendar.YEAR, year)
-        cal.set(Calendar.MONTH, month - 1)
-        cal.set(Calendar.DAY_OF_MONTH, 1)
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val startMs = cal.timeInMillis
-
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
-        cal.set(Calendar.HOUR_OF_DAY, 23)
-        cal.set(Calendar.MINUTE, 59)
-        cal.set(Calendar.SECOND, 59)
-        cal.set(Calendar.MILLISECOND, 999)
-        val endMs = cal.timeInMillis
-
-        val transactions = transactionRepo.getByDateRange(startMs, endMs)
-        transactions.filter { it.type == "INCOME" || it.type == "CREDIT" }
+        val (startMs, endMs) = monthRange(month, year)
+        transactionRepo.getByDateRange(startMs, endMs)
+            .filter { it.type == "INCOME" || it.type == "CREDIT" }
             .sumOf { (it.amount * 100).toLong() }
     }
 
@@ -202,7 +187,7 @@ class AnalyticsService(
                 
                 val diffMs = cal.timeInMillis - startMs
                 val days = (diffMs / (1000 * 60 * 60 * 24)).toInt() + 1
-                elapsedDays = Math.max(1, Math.min(7, days))
+                elapsedDays = days.coerceIn(1, 7)
 
                 targetCal.add(Calendar.DAY_OF_YEAR, 6)
                 targetCal.set(Calendar.HOUR_OF_DAY, 23)
@@ -264,7 +249,7 @@ class AnalyticsService(
             spentAmount
         }
 
-        val daysRemaining = Math.max(0, totalDays - elapsedDays)
+        val daysRemaining = (totalDays - elapsedDays).coerceAtLeast(0)
 
         BudgetStatus(
             budget = budget,

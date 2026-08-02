@@ -80,7 +80,6 @@ class LedgerViewModel(
                     return@launch
                 }
 
-                val client = OkHttpClient()
                 val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$apiKey"
 
                 val functionDeclaration = JSONObject().apply {
@@ -135,7 +134,7 @@ class LedgerViewModel(
 
                 val requestBody = requestJson.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder().url(url).post(requestBody).build()
-                val response = client.newCall(request).execute()
+                val response = httpClient.newCall(request).execute()
                 val responseText = response.body?.string() ?: ""
                 
                 Log.d("GeminiQuery", "AI Response 1: $responseText")
@@ -221,7 +220,7 @@ class LedgerViewModel(
                         val followUpBody = followUpJson.toString().toRequestBody("application/json".toMediaType())
 
                         val followUpRequest = Request.Builder().url(url).post(followUpBody).build()
-                        val followUpResponse = client.newCall(followUpRequest).execute()
+                        val followUpResponse = httpClient.newCall(followUpRequest).execute()
                         val followUpText = followUpResponse.body?.string() ?: ""
                         
                         Log.d("GeminiQuery", "AI Response 2: $followUpText")
@@ -542,7 +541,10 @@ class LedgerViewModel(
         }
     }
 
-} // ← END OF CLASS
+    companion object {
+        private val httpClient = OkHttpClient()
+    }
+}
 
 // ============================================================================
 // VIEWMODEL FACTORY

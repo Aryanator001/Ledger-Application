@@ -1,7 +1,7 @@
 package com.example.ai.model
 
 enum class Direction {
-    INCOME, EXPENSE, TRANSFER;
+    INCOME, EXPENSE, TRANSFER, CREDIT, DEBIT;
 
     companion object {
         fun fromString(value: String?): Direction? {

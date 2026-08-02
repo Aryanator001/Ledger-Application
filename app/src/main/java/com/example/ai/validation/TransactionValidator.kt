@@ -28,11 +28,6 @@ class TransactionValidator(
             errors.add(ValidationError.DirectionMissing)
         }
 
-        // 3. Entity check — blank or whitespace-only
-        if (candidate.entity.isNullOrBlank()) {
-            errors.add(ValidationError.EntityMissing)
-        }
-
         return errors
     }
 
@@ -109,6 +104,8 @@ private fun com.example.ai.model.Direction?.toTransactionType(): String? {
         com.example.ai.model.Direction.INCOME -> "INCOME"
         com.example.ai.model.Direction.EXPENSE -> "EXPENSE"
         com.example.ai.model.Direction.TRANSFER -> "EXPENSE"
+        com.example.ai.model.Direction.CREDIT -> "CREDIT"
+        com.example.ai.model.Direction.DEBIT -> "DEBIT"
         null -> null
     }
 }

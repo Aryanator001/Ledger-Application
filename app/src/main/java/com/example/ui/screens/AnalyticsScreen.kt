@@ -327,7 +327,7 @@ private fun PeriodSelector(
                 Text(
                     text = displayLabel,
                     style = AppTypography.caption,
-                    color = if (isSelected) Color.White else MaterialTheme.appColors.textSecondary
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.appColors.textSecondary
                 )
             }
         }
@@ -782,6 +782,7 @@ private fun PieChart(
         val sweeps = data.map { it.totalAmount / total * 360f }
         sweeps to sweeps.runningFold(-90f) { acc, s -> acc + s }.dropLast(1)
     }
+    val fallbackSliceColor = MaterialTheme.appColors.textTertiary
 
     Canvas(
         modifier = modifier.pointerInput(data) {
@@ -814,7 +815,7 @@ private fun PieChart(
             val expand = if (idx == tappedIndex) 8f else 0f
             val inset = strokeW / 2f + expand
             drawArc(
-                color = sliceColors.getOrElse(idx) { Color.Gray },
+                color = sliceColors.getOrElse(idx) { fallbackSliceColor },
                 startAngle = startAngles[idx],
                 sweepAngle = sweep - 1.5f,
                 useCenter = false,

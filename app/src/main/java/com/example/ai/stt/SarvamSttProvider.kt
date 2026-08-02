@@ -10,6 +10,7 @@ import com.example.BuildConfig
 import com.example.ai.state.FailureReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -23,6 +24,8 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.sqrt
 
 /**
@@ -39,18 +42,34 @@ import kotlin.math.sqrt
  *  - AudioRecord capture runs on a dedicated Thread.
  *  - OkHttp upload runs on Dispatchers.IO via a supervised CoroutineScope.
  *  - All callbacks are delivered on the main thread via Handler.
+ *
+ * Session safety:
+ *  - Every call to start() increments sessionId. Recording threads and upload
+ *    coroutines capture mySession at creation time and bail out silently if
+ *    sessionId has moved on (meaning start()/cancel() was called again).
+ *    This eliminates the isCancelled race that caused the 3-4 transaction freeze.
  */
 class SarvamSttProvider(private val context: Context) : SttProvider {
 
     private val handler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // Session counter — incremented on every start(). Threads and coroutines
+    // capture their session at start; any stale work sees sessionId != mySession
+    // and exits without touching callbacks or state.
+    private val sessionId = AtomicInteger(0)
+
     @Volatile private var isRecording = false
     @Volatile private var isCancelled = false
-    private var callbacks: SttCallbacks? = null
+    @Volatile private var callbacks: SttCallbacks? = null
     private var recordingThread: Thread? = null
 
     @Volatile private var activeCall: okhttp3.Call? = null
+    @Volatile private var uploadJob: Job? = null
+
+    // Holds the active AudioRecord so stopInternals() can call stop() from the main thread,
+    // forcing any blocking read() to return ERROR_INVALID_OPERATION (n < 0).
+    private val activeRecorder = AtomicReference<AudioRecord?>(null)
 
     private companion object {
         const val SAMPLE_RATE = 16_000
@@ -74,7 +93,15 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
     // -------------------------------------------------------------------------
 
     override fun start(callbacks: SttCallbacks) {
+        // Capture the old recording thread BEFORE stopInternals clears the reference,
+        // so we can join it and ensure the old AudioRecord is released before we
+        // allocate a new one. (Android allows only one active AudioRecord at a time.)
+        val previousThread = recordingThread
         stopInternals(discard = true)
+
+        // Wait up to 400 ms for the previous thread to exit and release AudioRecord.
+        // Typical exit time is 20–100 ms (one VAD read buffer + recorder.release()).
+        previousThread?.join(400L)
 
         val apiKey = try { BuildConfig.SARVAM_API_KEY } catch (_: Exception) { "" }
         if (apiKey.isBlank() || apiKey == "your_sarvam_key_here") {
@@ -86,6 +113,10 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
         isCancelled = false
         isRecording = true
 
+        // Mint a session ID for this recording cycle. Every thread and coroutine
+        // launched below captures this value and compares it before touching state.
+        val mySession = sessionId.incrementAndGet()
+
         recordingThread = Thread {
             val minBuf = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE,
@@ -93,7 +124,9 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                 AudioFormat.ENCODING_PCM_16BIT
             )
             if (minBuf == AudioRecord.ERROR_BAD_VALUE || minBuf == AudioRecord.ERROR) {
-                handler.post { this.callbacks?.onError(FailureReason.SttFailed) }
+                handler.post {
+                    if (sessionId.get() == mySession) this.callbacks?.onError(FailureReason.SttFailed)
+                }
                 return@Thread
             }
 
@@ -107,17 +140,23 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                     minBuf * 4
                 )
             } catch (e: Exception) {
-                handler.post { this.callbacks?.onError(FailureReason.SttFailed) }
+                handler.post {
+                    if (sessionId.get() == mySession) this.callbacks?.onError(FailureReason.SttFailed)
+                }
                 return@Thread
             }
 
             if (recorder.state != AudioRecord.STATE_INITIALIZED) {
                 recorder.release()
-                handler.post { this.callbacks?.onError(FailureReason.SttFailed) }
+                handler.post {
+                    if (sessionId.get() == mySession) this.callbacks?.onError(FailureReason.SttFailed)
+                }
                 return@Thread
             }
 
-            handler.post { this.callbacks?.onListeningStarted() }
+            handler.post {
+                if (sessionId.get() == mySession) this.callbacks?.onListeningStarted()
+            }
 
             val readBuf = ByteArray(minBuf)
             val pcmOut = ByteArrayOutputStream()
@@ -127,15 +166,38 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
             var speechStartMs  = 0L
             var silenceStartMs = 0L
 
+            val recordStartMs = System.currentTimeMillis()
             recorder.startRecording()
+            activeRecorder.set(recorder)   // expose so stopInternals can unblock read()
             while (isRecording) {
                 val n = recorder.read(readBuf, 0, readBuf.size)
+                if (n < 0) {
+                    // AudioRecord returned an error code — the audio HAL has entered a bad
+                    // state after repeated create/stop/release cycles. release() is always
+                    // safe; stop() would throw IllegalStateException in ERROR state.
+                    activeRecorder.compareAndSet(recorder, null)
+                    recorder.release()
+                    handler.post {
+                        if (sessionId.get() == mySession)
+                            this.callbacks?.onError(FailureReason.SttFailed)
+                    }
+                    return@Thread
+                }
                 if (n > 0) {
                     pcmOut.write(readBuf, 0, n)
 
                     // Voice Activity Detection
                     val level = rms(readBuf, n)
                     val now   = System.currentTimeMillis()
+
+                    // Safety timeout: if no speech is detected within 8 seconds, the HAL
+                    // is likely returning zero-amplitude buffers. Fire SttFailed so
+                    // DualSttProvider can fall back to Android native STT transparently.
+                    if (!speechDetected && (now - recordStartMs) > 8_000L) {
+                        isRecording = false
+                        break
+                    }
+
                     if (level > SILENCE_THRESHOLD_RMS) {
                         if (!speechDetected) { speechDetected = true; speechStartMs = now }
                         silenceStartMs = 0L
@@ -148,15 +210,33 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                     }
                 }
             }
-            recorder.stop()
+            // CAS: if stopInternals already called stop() from main thread, skip it here
+            // to avoid IllegalStateException on double-stop.
+            if (activeRecorder.compareAndSet(recorder, null)) {
+                try { recorder.stop() } catch (_: Exception) { }
+            }
             recorder.release()
 
-            if (isCancelled) return@Thread
+            // If we exited via the 8-second no-speech timeout (HAL returning silent
+            // buffers), fire SttFailed to trigger the Android native STT fallback
+            // instead of uploading an empty WAV to Sarvam.
+            if (!speechDetected && !isCancelled && sessionId.get() == mySession) {
+                handler.post {
+                    if (sessionId.get() == mySession)
+                        this.callbacks?.onError(FailureReason.SttFailed)
+                }
+                return@Thread
+            }
+
+            // Guard: if this session was superseded (start() called again) or cancelled,
+            // do not upload. Using sessionId instead of isCancelled alone prevents the
+            // race where isCancelled is reset to false by a new start() before this check.
+            if (isCancelled || sessionId.get() != mySession) return@Thread
 
             val pcm = pcmOut.toByteArray()
             val wav = buildWav(pcm)
 
-            scope.launch { uploadToSarvam(wav, apiKey) }
+            uploadJob = scope.launch { uploadToSarvam(wav, apiKey, mySession) }
         }.also { it.start() }
     }
 
@@ -178,11 +258,19 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
     // Internal helpers
     // -------------------------------------------------------------------------
 
+    private fun stopActiveRecorder() {
+        val rec = activeRecorder.getAndSet(null)
+        try { rec?.stop() } catch (_: Exception) { }
+    }
+
     private fun stopInternals(discard: Boolean) {
         if (discard) {
             isCancelled = true
+            stopActiveRecorder()   // forces any blocking read() to return immediately
             activeCall?.cancel()
             activeCall = null
+            uploadJob?.cancel()
+            uploadJob = null
         }
         isRecording = false
         callbacks = null
@@ -204,8 +292,10 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
         return sqrt(sum / (n / 2)).toFloat()
     }
 
-    private fun uploadToSarvam(wav: ByteArray, apiKey: String) {
-        val cb = callbacks ?: return   // caller cancelled; discard result
+    private fun uploadToSarvam(wav: ByteArray, apiKey: String, mySession: Int) {
+        // Bail out immediately if this session has been superseded or cancelled.
+        if (sessionId.get() != mySession || isCancelled) return
+        val cb = callbacks ?: return
 
         try {
             val body = MultipartBody.Builder()
@@ -233,7 +323,9 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                     FailureReason.Unknown("Sarvam auth error (${response.code})")
                 else
                     FailureReason.NetworkError("Sarvam API error: ${response.code}")
-                handler.post { if (!isCancelled) cb.onError(reason) }
+                handler.post {
+                    if (sessionId.get() == mySession && !isCancelled) cb.onError(reason)
+                }
                 return
             }
 
@@ -242,14 +334,15 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
             } catch (_: Exception) { "" }
 
             handler.post {
-                if (isCancelled) return@post
+                if (sessionId.get() != mySession || isCancelled) return@post
                 if (transcript.isNotBlank()) cb.onFinal(transcript)
                 else cb.onError(FailureReason.EmptyTranscript)
             }
         } catch (e: Exception) {
             activeCall = null
             handler.post {
-                if (!isCancelled) cb.onError(FailureReason.NetworkError(e.message ?: "Network error"))
+                if (sessionId.get() == mySession && !isCancelled)
+                    cb.onError(FailureReason.NetworkError(e.message ?: "Network error"))
             }
         }
     }

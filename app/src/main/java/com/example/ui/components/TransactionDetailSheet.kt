@@ -62,6 +62,7 @@ fun CategoryIconDisplay(iconName: String, modifier: Modifier = Modifier) {
 fun TransactionDetailSheet(
     viewModel: LedgerViewModel,
     initialAmount: Double? = null,
+    initialType: String? = null,
     existingTransaction: Transaction? = null,
     onDismiss: () -> Unit
 ) {
@@ -73,7 +74,7 @@ fun TransactionDetailSheet(
     val context = LocalContext.current
 
     var amountStr by remember { mutableStateOf(existingTransaction?.amount?.toString()?.removeSuffix(".0") ?: initialAmount?.toString()?.removeSuffix(".0") ?: "") }
-    var type by remember { mutableStateOf(existingTransaction?.type ?: "EXPENSE") }
+    var type by remember { mutableStateOf(existingTransaction?.type ?: initialType ?: "EXPENSE") }
     var categoryId by remember { mutableStateOf(existingTransaction?.categoryId ?: "") }
     var accountId by remember { mutableStateOf(existingTransaction?.accountId ?: "") }
     var toAccountId by remember { mutableStateOf(existingTransaction?.toAccountId ?: "") }

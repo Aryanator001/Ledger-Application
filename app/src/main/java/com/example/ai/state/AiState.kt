@@ -20,10 +20,16 @@ sealed class AiState {
     data class QueryProcessing(val transcript: String) : AiState()
     data class QueryAnswered(val response: QueryResponse) : AiState()
     data class Failed(val reason: FailureReason, val rawTranscript: String? = null) : AiState()
+    data class ManualFallback(
+        val prefillAmount: Double?,
+        val prefillType: String?,
+        val rawTranscript: String
+    ) : AiState()
 }
 
 val AiState.isInteractive: Boolean
-    get() = this is AiState.ConfirmationRequired || this is AiState.Failed || this is AiState.QueryAnswered
+    get() = this is AiState.ConfirmationRequired || this is AiState.Failed ||
+            this is AiState.QueryAnswered || this is AiState.ManualFallback
 
 val AiState.isBusy: Boolean
     get() = this is AiState.Listening || this is AiState.Transcribing ||

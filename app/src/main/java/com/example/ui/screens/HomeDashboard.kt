@@ -118,6 +118,7 @@ fun HomeDashboard(
         var prompt by remember { mutableStateOf("") }
         var showTransactionSheet by remember { mutableStateOf(false) }
         var parsedAmount by remember { mutableStateOf<Double?>(null) }
+        var prefillType by remember { mutableStateOf<String?>(null) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
         val aiState by aiViewModel.state.collectAsStateWithLifecycle()
@@ -135,6 +136,8 @@ fun HomeDashboard(
                 val type = when (candidate.direction) {
                     Direction.INCOME -> "INCOME"
                     Direction.EXPENSE, Direction.TRANSFER -> "EXPENSE"
+                    Direction.CREDIT -> "CREDIT"
+                    Direction.DEBIT -> "DEBIT"
                     null -> "EXPENSE"
                 }
                 viewModel.addTransaction(
@@ -148,6 +151,15 @@ fun HomeDashboard(
                 )
                 aiViewModel.markCommitted("saved", candidate)
                 android.widget.Toast.makeText(context, context.getString(R.string.dashboard_auto_saved, candidate.entity ?: "", candidate.amount?.toLong() ?: 0L), android.widget.Toast.LENGTH_SHORT).show()
+            }
+
+            // JSON parse failure → open manual sheet with pre-filled amount/type
+            if (aiState is AiState.ManualFallback) {
+                val fallback = aiState as AiState.ManualFallback
+                parsedAmount = fallback.prefillAmount
+                prefillType = fallback.prefillType
+                showTransactionSheet = true
+                aiViewModel.onManualFallbackDismissed()
             }
         }
 
@@ -209,6 +221,8 @@ fun HomeDashboard(
                 Direction.INCOME -> "INCOME"
                 Direction.EXPENSE -> "EXPENSE"
                 Direction.TRANSFER -> "EXPENSE"
+                Direction.CREDIT -> "CREDIT"
+                Direction.DEBIT -> "DEBIT"
             }
             val toAccountId = if (direction == Direction.TRANSFER) "default_cash" else null
 
@@ -338,6 +352,7 @@ fun HomeDashboard(
                 onAddClick = {
                     prompt = ""
                     parsedAmount = null
+                    prefillType = null
                     showTransactionSheet = true
                 },
                 placeholder = stringResource(R.string.chat_input_placeholder_alt),
@@ -350,10 +365,12 @@ fun HomeDashboard(
             com.example.ui.components.TransactionDetailSheet(
                 viewModel = viewModel,
                 initialAmount = parsedAmount,
-                onDismiss = { 
-                    showTransactionSheet = false 
+                initialType = prefillType,
+                onDismiss = {
+                    showTransactionSheet = false
                     prompt = ""
                     parsedAmount = null
+                    prefillType = null
                 }
             )
         }

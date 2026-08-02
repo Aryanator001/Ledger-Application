@@ -122,6 +122,8 @@ fun AiConfirmationCard(
                                 Direction.INCOME -> "Income"
                                 Direction.EXPENSE -> "Expense"
                                 Direction.TRANSFER -> "Transfer"
+                                Direction.CREDIT -> "Credit"
+                                Direction.DEBIT -> "Debit"
                             },
                             fontSize = 13.sp
                         )

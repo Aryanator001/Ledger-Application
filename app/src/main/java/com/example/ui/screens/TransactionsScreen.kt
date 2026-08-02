@@ -314,10 +314,8 @@ fun TransactionsScreen(
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    val grouped = filteredList.groupBy { 
-                        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.US)
-                        sdf.format(Date(it.transaction.date))
-                    }
+                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.US)
+                    val grouped = filteredList.groupBy { sdf.format(Date(it.transaction.date)) }
 
                     grouped.forEach { (dateStr, groupTxs) ->
                         item {
@@ -387,7 +385,7 @@ fun TransactionsScreen(
                                         modifier = Modifier.fillMaxSize().background(bgCol).padding(horizontal = 24.dp),
                                         contentAlignment = align
                                     ) {
-                                        Icon(icon, contentDescription = null, tint = Color.White)
+                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                                     }
                                 },
                                 enableDismissFromStartToEnd = true,
@@ -408,8 +406,8 @@ fun TransactionsScreen(
                                             .padding(horizontal = 16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        val dayDf = SimpleDateFormat("dd/MM", Locale.US)
-                                        val dayNameDf = SimpleDateFormat("EEE", Locale.US)
+                                        val dayDf = remember { SimpleDateFormat("dd/MM", Locale.US) }
+                                        val dayNameDf = remember { SimpleDateFormat("EEE", Locale.US) }
                                         val dateObj = Date(tx.date)
                                         Column(modifier = Modifier.width(48.dp)) {
                                             Text(dayDf.format(dateObj), style = AppTypography.bodySmall, color = MaterialTheme.appColors.textSecondary)
@@ -422,17 +420,7 @@ fun TransactionsScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             val rawIcon = cat?.icon ?: "💰"
-                                            val displayIcon = if (rawIcon.any { it.isSurrogate() || it.code > 127 }) {
-                                                rawIcon
-                                            } else {
-                                                when (rawIcon.lowercase()) {
-                                                    "restaurant" -> "🍔"
-                                                    "receipt_long" -> "🧾"
-                                                    "shopping_bag" -> "🛍️"
-                                                    "more_horiz" -> "⚙️"
-                                                    else -> rawIcon.take(1)
-                                                }
-                                            }
+                                            val displayIcon = if (rawIcon.any { it.isSurrogate() || it.code > 127 }) rawIcon else rawIcon.toDisplayIcon()
                                             Text(displayIcon, fontSize = 20.sp)
                                         }
                                         Spacer(modifier = Modifier.width(12.dp))
@@ -502,10 +490,8 @@ fun TransactionsScreen(
                         }
                         
                         if (isArchivedExpanded) {
-                            val groupedArchived = filteredArchivedList.groupBy { 
-                                val sdf = SimpleDateFormat("dd MMM yyyy", Locale.US)
-                                sdf.format(Date(it.transaction.date))
-                            }
+                            val archivedSdf = SimpleDateFormat("dd MMM yyyy", Locale.US)
+                            val groupedArchived = filteredArchivedList.groupBy { archivedSdf.format(Date(it.transaction.date)) }
 
                             groupedArchived.forEach { (dateStr, groupTxs) ->
                                 item {
@@ -553,7 +539,7 @@ fun TransactionsScreen(
                                                     modifier = Modifier.fillMaxSize().background(MaterialTheme.appColors.primary).padding(horizontal = 24.dp),
                                                     contentAlignment = Alignment.CenterStart
                                                 ) {
-                                                    Icon(Icons.Default.Unarchive, contentDescription = null, tint = Color.White)
+                                                    Icon(Icons.Default.Unarchive, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                                                 }
                                             }
                                         },
@@ -575,8 +561,8 @@ fun TransactionsScreen(
                                                     .padding(horizontal = 16.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                val dayDf = SimpleDateFormat("dd/MM", Locale.US)
-                                                val dayNameDf = SimpleDateFormat("EEE", Locale.US)
+                                                val dayDf = remember { SimpleDateFormat("dd/MM", Locale.US) }
+                                                val dayNameDf = remember { SimpleDateFormat("EEE", Locale.US) }
                                                 val dateObj = Date(tx.date)
                                                 Column(modifier = Modifier.width(48.dp)) {
                                                     Text(dayDf.format(dateObj), style = AppTypography.bodySmall, color = MaterialTheme.appColors.textTertiary)
@@ -751,7 +737,7 @@ fun TransactionsScreen(
                                     .padding(vertical = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(monthLabels[idx], color = if(isSel) Color.White else MaterialTheme.appColors.textPrimary, style = AppTypography.bodyRegular)
+                                Text(monthLabels[idx], color = if(isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.appColors.textPrimary, style = AppTypography.bodyRegular)
                             }
                         }
                     }
@@ -801,10 +787,10 @@ fun FabMenu(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onAddClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.Add, null, tint = Color.White) }
-                IconButton(onClick = onAccountClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.AccountBalanceWallet, null, tint = Color.White) }
-                IconButton(onClick = onSearchClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.Search, null, tint = Color.White) }
-                IconButton(onClick = onFilterClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.FilterList, null, tint = Color.White) }
+                IconButton(onClick = onAddClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.onPrimary) }
+                IconButton(onClick = onAccountClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.onPrimary) }
+                IconButton(onClick = onSearchClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onPrimary) }
+                IconButton(onClick = onFilterClick, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.FilterList, null, tint = MaterialTheme.colorScheme.onPrimary) }
             }
         }
         
@@ -816,7 +802,15 @@ fun FabMenu(
                 .clickable { isOpen = !isOpen },
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.rotate(rot))
+            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.rotate(rot))
         }
     }
+}
+
+private fun String.toDisplayIcon(): String = when (this.lowercase()) {
+    "restaurant"   -> "🍔"
+    "receipt_long" -> "🧾"
+    "shopping_bag" -> "🛍️"
+    "more_horiz"   -> "⚙️"
+    else           -> this.take(1)
 }
