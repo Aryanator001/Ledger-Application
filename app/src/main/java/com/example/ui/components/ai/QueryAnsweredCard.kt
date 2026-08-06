@@ -1,6 +1,5 @@
 package com.example.ui.components.ai
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,7 +12,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ai.model.QueryResponse
+import com.example.ui.theme.AppTypography
 import com.example.ui.theme.appColors
+import kotlin.math.abs
 
 @Composable
 fun QueryAnsweredCard(
@@ -22,6 +23,24 @@ fun QueryAnsweredCard(
     onViewTransactions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dir = response.direction
+    val amount = response.totalAmount
+    val hasAmount = amount != 0.0 || response.transactionCount > 0
+
+    val amountColor = when (dir) {
+        "OUT" -> MaterialTheme.appColors.expense
+        "IN"  -> MaterialTheme.appColors.income
+        "NET" -> if (amount >= 0) MaterialTheme.appColors.income else MaterialTheme.appColors.expense
+        else  -> MaterialTheme.appColors.textPrimary
+    }
+    val amountPrefix = when (dir) {
+        "OUT" -> "–₹"
+        "IN"  -> "+₹"
+        "NET" -> if (amount >= 0) "+₹" else "–₹"
+        else  -> "₹"
+    }
+    val amountText = "%,.0f".format(abs(amount))
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -32,7 +51,7 @@ fun QueryAnsweredCard(
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -57,12 +76,30 @@ fun QueryAnsweredCard(
                 }
             }
 
-            Text(
-                text = response.headline,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.appColors.textPrimary
-            )
+            if (response.headline.isNotBlank()) {
+                Text(
+                    text = response.headline,
+                    style = AppTypography.bodyRegular,
+                    color = MaterialTheme.appColors.textSecondary
+                )
+            }
+
+            if (hasAmount) {
+                Text(
+                    text = "$amountPrefix$amountText",
+                    style = AppTypography.display,
+                    fontWeight = FontWeight.Bold,
+                    color = amountColor
+                )
+            }
+
+            response.timeContext?.let { ctx ->
+                Text(
+                    text = ctx,
+                    style = AppTypography.caption,
+                    color = MaterialTheme.appColors.textTertiary
+                )
+            }
 
             if (response.transactionCount > 0) {
                 Text(
@@ -70,7 +107,7 @@ fun QueryAnsweredCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.appColors.textTertiary
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
                 TextButton(
                     onClick = onViewTransactions,

@@ -384,4 +384,6 @@
     <string name="nav_transactions">ट्रांज़ैक्शन</string>
     <string name="nav_analytics">एनालिटिक्स</string>
     <string name="nav_settings">सेटिंग्स</string>
+    <string name="filtered_ledger_title">फ़िल्टर किए गए परिणाम</string>
+    <string name="back">वापस</string>
 </resources>

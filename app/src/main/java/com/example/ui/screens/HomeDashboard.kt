@@ -147,7 +147,8 @@ fun HomeDashboard(
                     description = candidate.notes,
                     rawTranscript = candidate.rawTranscript,
                     categoryId = categoryId,
-                    accountId = accountId
+                    accountId = accountId,
+                    paymentMethod = candidate.paymentMethodHint
                 )
                 aiViewModel.markCommitted("saved", candidate)
                 android.widget.Toast.makeText(context, context.getString(R.string.dashboard_auto_saved, candidate.entity ?: "", candidate.amount?.toLong() ?: 0L), android.widget.Toast.LENGTH_SHORT).show()
@@ -165,7 +166,7 @@ fun HomeDashboard(
 
         // Release the recognizer when the dashboard leaves composition.
         DisposableEffect(Unit) {
-            onDispose { sttProvider.release() }
+            onDispose { sttProvider.cancel() }
         }
 
         val sttCallbacks = remember {
@@ -234,7 +235,8 @@ fun HomeDashboard(
                 rawTranscript = rawTranscript,
                 categoryId = categoryId,
                 accountId = accountId,
-                toAccountId = toAccountId
+                toAccountId = toAccountId,
+                paymentMethod = candidate.paymentMethodHint
             )
 
             // Get candidate from current AI state for the committed notification.
@@ -273,13 +275,18 @@ fun HomeDashboard(
                         response = state.response,
                         onDismiss = { dismissAi() },
                         onViewTransactions = {
+                            val idsStr = state.response.transactionIds
+                                .filter { it.isNotBlank() }
+                                .joinToString(",")
+                                .ifBlank { null }
                             navController.navigate(
                                 com.example.ui.navigation.FilteredLedger(
                                     entity = state.response.query.entity,
                                     direction = state.response.query.direction?.name,
                                     categoryId = state.response.query.categoryHint,
                                     timeRangeStart = state.response.query.timeRangeStart,
-                                    timeRangeEnd = state.response.query.timeRangeEnd
+                                    timeRangeEnd = state.response.query.timeRangeEnd,
+                                    transactionIds = idsStr
                                 )
                             )
                             dismissAi()

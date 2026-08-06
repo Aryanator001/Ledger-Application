@@ -25,7 +25,7 @@ class GeminiAnalystImpl(
 ) : AiAnalyst {
 
     private val endpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
     private val rupee = NumberFormat.getNumberInstance(Locale("en", "IN")).apply {
         maximumFractionDigits = 0

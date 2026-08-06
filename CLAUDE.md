@@ -104,7 +104,7 @@ Room database (`ledger_database`, v11). Entities: `Transaction`, `Category`, `Ac
 
 `TransactionRepository` is the single write path for transactions; it hooks `AnalyticsCacheUpdater` on each mutation.
 
-**Soft-delete pattern**: `Transaction`, `Account`, and `Budget` all carry `is_deleted: Boolean` and `last_updated: Long`. Logical deletes set `is_deleted = true` rather than physically removing rows — DAOs must filter `WHERE is_deleted = 0` in queries. `Transaction` also has a separate `is_archived: Boolean` field (for UI-level archiving); archived rows are not soft-deleted.
+**Soft-delete pattern**: `Transaction`, `Account`, and `Budget` all carry `is_deleted: Boolean` and `updated_at: Long` (Kotlin field `updatedAt`). Logical deletes set `is_deleted = true` rather than physically removing rows — DAOs must filter `WHERE is_deleted = 0` in queries. `Transaction` also has a separate `is_archived: Boolean` field (for UI-level archiving); archived rows are not soft-deleted.
 
 **Amount storage**: `Transaction.amount` is a `Double` in the user's currency unit (not paise). Only `Budget.limitAmount` is stored as a `Long` in paise (×100) to avoid floating-point errors — convert ÷ 100 before displaying budgets.
 
@@ -139,8 +139,8 @@ Room database (`ledger_database`, v11). Entities: `Transaction`, `Category`, `Ac
 ### Navigation
 
 Two patterns coexist in `MainActivity`:
-- **String routes** — legacy `Route` sealed class. Bottom nav: `Home`, `Transactions`, `Analytics`, `Settings`. Deep routes: `AccountDetail`, `GeneralSettings`, `SecuritySettings`, `BackupRestore`, `Reminders`, `RecurringReminders`, `Login`, `ProfileSetup`, etc.
-- **Type-safe routes** — `@Serializable` objects in `AppRoutes.kt` (currently `FilteredLedger`); use `navController.navigate(FilteredLedger(...))` and `backStackEntry.toRoute<FilteredLedger>()`.
+- **String routes** — legacy `Route` sealed class. Bottom nav: `Transactions`, `Analytics`, `Settings`. Deep routes: `AccountDetail`, `GeneralSettings`, `SecuritySettings`, `BackupRestore`, `Reminders`, `RecurringReminders`, `Login`, `ProfileSetup`, etc.
+- **Type-safe routes** — `@Serializable` objects in `AppRoutes.kt`: `Home` (data object) and `FilteredLedger` (data class with filter params). Use `navController.navigate(FilteredLedger(...))` and `backStackEntry.toRoute<FilteredLedger>()`.
 
 New destinations should prefer the type-safe pattern.
 
@@ -157,8 +157,17 @@ All use manual `ViewModelProvider.Factory`; no Hilt. Factories are named `<ViewM
 ### UI Theming Rules
 
 Hard constraints — do not deviate:
-- **Colors**: Always use `MaterialTheme.appColors.*` tokens (e.g. `bgBase`, `bgSurface`, `bgSurface2`, `primary`, `textPrimary`, `textSecondary`, `textTertiary`, `borderLight`). Never hardcode hex values or use `Color.Red`, `Color.Gray`, etc.
-- **Typography**: Always use `AppTypography.*` tokens. Never use `MaterialTheme.typography.*` or inline `TextStyle()` unless the token genuinely doesn't exist — if missing, add a new token to the theme file rather than inlining.
+- **Colors**: Always use `MaterialTheme.appColors.*` tokens. Full set defined in `Color.kt`:
+  - Backgrounds: `bgBase`, `bgSurface`, `bgSurface2`, `bgSurface3`
+  - Brand: `primary`, `primaryLight`
+  - Semantic: `income`, `incomeLight`, `expense`, `expenseLight`, `warning`, `warningLight`, `success`, `error`
+  - Text: `textPrimary`, `textSecondary`, `textTertiary`, `textDisabled`
+  - Borders: `borderLight`, `borderMedium`
+  - Tab bar: `tabBackground`, `tabBorder`, `tabActive`, `tabActiveBg`, `tabInactive`
+  - Surfaces: `surfaceInverse`, `surfaceSubtle`, `swipeDeleteBg`, `swipeArchiveBg`
+  - Never hardcode hex values or use `Color.Red`, `Color.Gray`, etc.
+  - For account color pickers, use `accountPalette` (list of hex strings) from `Color.kt`.
+- **Typography**: Always use `AppTypography.*` tokens: `display`, `headline1`, `headline2`, `headline3`, `bodyLarge`, `bodyRegular`, `bodySmall`, `caption`, `monospace`. Never use `MaterialTheme.typography.*` or inline `TextStyle()` — if a token is missing, add it to `Typography.kt`.
 - **Spacing**: Use `AppSpacing.*` tokens (`xs`=4dp, `sm`=8dp, `md`=12dp, `lg`=16dp, `xl`=24dp, `xxl`=32dp, `xxxl`=48dp, `buttonHeight`=48dp). Don't invent new arbitrary dp values.
 - **New semantic colors** (e.g. a "warning yellow"): Add as a new token to the theme file — never inline it at the call site.
 - **Dark theme**: XML color overrides for night mode live in `res/values-night/`. When adding new XML color resources, add them to both `values/` and `values-night/`.

@@ -25,13 +25,17 @@ sealed class QueryResult {
         val metric: Metric,
         val label: String,
         val txnCount: Int,
-        val plan: QueryPlan
+        val plan: QueryPlan,
+        val transactionIds: List<String> = emptyList(),
+        val timeContext: String? = null
     ) : QueryResult()
 
     data class Grouped(
         val buckets: List<Bucket>,
         val label: String,
-        val plan: QueryPlan
+        val plan: QueryPlan,
+        val transactionIds: List<String> = emptyList(),
+        val timeContext: String? = null
     ) : QueryResult() {
         data class Bucket(val key: String, val amount: Double, val count: Int)
     }

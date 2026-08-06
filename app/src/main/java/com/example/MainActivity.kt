@@ -205,7 +205,19 @@ class MainActivity : AppCompatActivity() {
 
             val intentClassifier: IntentClassifier = RuleBasedIntentClassifier()
             val transactionExtractor: TransactionExtractor = GeminiTransactionExtractor()
-            val aiFactory = AiTransactionViewModelFactory(app.repository, app.accountRepository, intentClassifier, transactionExtractor, app.analyticsRepository)
+            val aiFactory = AiTransactionViewModelFactory(
+                transactionRepository = app.repository,
+                accountRepository = app.accountRepository,
+                intentClassifier = intentClassifier,
+                transactionExtractor = transactionExtractor,
+                database = app.database,
+                scopeIdProvider = {
+                    kotlinx.coroutines.runBlocking {
+                        app.userPreferences.activeLedgerScopeId.first() ?: ""
+                    }
+                },
+                geminiApiKeyProvider = { com.example.BuildConfig.GEMINI_API_KEY }
+            )
             val aiViewModel: AiTransactionViewModel = viewModel(factory = aiFactory)
 
             val analyticsFactory = AnalyticsViewModelFactory(app.repository, app.analyticsService, GeminiInsightsService())
@@ -214,7 +226,7 @@ class MainActivity : AppCompatActivity() {
             val authFactory = com.example.ui.viewmodel.AuthViewModelFactory(app.authRepository, app.securityStore)
             val authViewModel: com.example.ui.viewmodel.AuthViewModel = viewModel(factory = authFactory)
 
-            val sttProvider: SttProvider = DualSttProvider(this)
+            val sttProvider: SttProvider = remember { DualSttProvider(this@MainActivity) }
 
             val isLocked by com.example.data.security.AppLockManager.isLocked.collectAsStateWithLifecycle()
             val appLockEnabled by securityViewModel.appLockEnabled.collectAsStateWithLifecycle()
@@ -405,7 +417,11 @@ fun MainScreen(
                 }
                 composable<com.example.ui.navigation.FilteredLedger> { backStackEntry ->
                     val route = backStackEntry.toRoute<com.example.ui.navigation.FilteredLedger>()
-                    com.example.ui.screens.FilteredLedgerScreen(filter = route, transactionRepository = transactionRepository)
+                    com.example.ui.screens.FilteredLedgerScreen(
+                        filter = route,
+                        transactionRepository = transactionRepository,
+                        onBack = { navController.popBackStack() }
+                    )
                 }
                 composable(Route.Transactions.route) {
                     TransactionsScreen(

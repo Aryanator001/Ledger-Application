@@ -27,10 +27,11 @@ class LiveEntityResolver(
 
     override fun couldBeEntity(token: String): Boolean {
         val lower = token.lowercase()
+        if (lower.length < 2) return false
         return namesProvider().any { name ->
-            name.lowercase().split(" ").any { part ->
-                part.startsWith(lower) || part == lower
-            }
+            val nl = name.lowercase()
+            nl == lower || nl.split(" ").any { part -> part.startsWith(lower) } ||
+                nl.startsWith(lower) || nl.contains(lower)
         }
     }
 
@@ -38,25 +39,33 @@ class LiveEntityResolver(
         val lower = surfaceForm.lowercase().trim()
         val names = namesProvider()
 
-        val matches = names.filter { name ->
-            val nameLower = name.lowercase()
-            nameLower == lower ||
-                nameLower.split(" ").any { part -> part.startsWith(lower) }
+        // Exact and prefix matches
+        val exactMatches = names.filter { name ->
+            val nl = name.lowercase()
+            nl == lower || nl.split(" ").any { part -> part == lower }
+        }
+        if (exactMatches.size == 1) {
+            val idx = names.indexOfFirst { it.equals(exactMatches[0], ignoreCase = true) }
+            return EntityRef(surfaceForm, idx.toLong() + 1L, exactMatches[0], 1.0f)
+        }
+        if (exactMatches.size > 1) {
+            return EntityRef(surfaceForm, null, null, 0.5f, ambiguousWith = exactMatches)
         }
 
-        return when (matches.size) {
-            0 -> EntityRef(surfaceForm, null, null, 0.0f)
+        // Prefix / substring fallback
+        val fuzzyMatches = names.filter { name ->
+            val nl = name.lowercase()
+            nl.split(" ").any { part -> part.startsWith(lower) } ||
+                nl.startsWith(lower) || nl.contains(lower)
+        }
+
+        return when (fuzzyMatches.size) {
+            0 -> EntityRef(surfaceForm, null, null, 0.3f)  // attempted, not found — Rule 0 triggers CLARIFY
             1 -> {
-                val idx = names.indexOfFirst { it.equals(matches[0], ignoreCase = true) }
-                EntityRef(surfaceForm, idx.toLong() + 1L, matches[0], 1.0f)
+                val idx = names.indexOfFirst { it.equals(fuzzyMatches[0], ignoreCase = true) }
+                EntityRef(surfaceForm, idx.toLong() + 1L, fuzzyMatches[0], 0.9f)
             }
-            else -> EntityRef(
-                surfaceForm,
-                id = null,
-                canonicalName = null,
-                confidence = 0.5f,
-                ambiguousWith = matches
-            )
+            else -> EntityRef(surfaceForm, null, null, 0.5f, ambiguousWith = fuzzyMatches.take(4))
         }
     }
 }
@@ -65,37 +74,55 @@ class LiveEntityResolver(
 // LiveCategoryResolver — static seeded category list
 // ─────────────────────────────────────────────────────────────
 
-class LiveCategoryResolver : QueryRouter.CategoryResolver {
+class LiveCategoryResolver(
+    private val dynamicNamesProvider: () -> List<String> = { emptyList() }
+) : QueryRouter.CategoryResolver {
 
-    private val keywords: Map<String, Pair<Long, String>> = mapOf(
-        "food"       to (10L to "Food"),
-        "khana"      to (10L to "Food"),
-        "khaana"     to (10L to "Food"),
-        "groceries"  to (10L to "Food"),
-        "grocery"    to (10L to "Food"),
-        "rent"       to (11L to "Rent"),
-        "kiraya"     to (11L to "Rent"),
-        "kiraye"     to (11L to "Rent"),
-        "shopping"   to (12L to "Shopping"),
-        "kharidari"  to (12L to "Shopping"),
-        "general"    to (1L  to "General"),
-        "transport"  to (13L to "Transport"),
-        "travel"     to (13L to "Transport"),
-        "salary"     to (14L to "Salary")
+    private val staticKeywords: Map<String, Pair<Long, String>> = mapOf(
+        "food"       to (10L to "food"),
+        "khana"      to (10L to "food"),
+        "khaana"     to (10L to "food"),
+        "groceries"  to (10L to "food"),
+        "grocery"    to (10L to "food"),
+        "rent"       to (11L to "rent"),
+        "kiraya"     to (11L to "rent"),
+        "kiraye"     to (11L to "rent"),
+        "shopping"   to (12L to "shopping"),
+        "kharidari"  to (12L to "shopping"),
+        "general"    to (1L  to "general"),
+        "transport"  to (13L to "transport"),
+        "travel"     to (13L to "transport"),
+        "salary"     to (14L to "salary"),
+        "electricity" to (15L to "electricity"),
+        "bijli"      to (15L to "electricity"),
+        "medical"    to (16L to "medical"),
+        "health"     to (16L to "medical"),
+        "education"  to (17L to "education"),
+        "entertainment" to (18L to "entertainment")
     )
 
-    override fun couldBeCategory(token: String): Boolean = token.lowercase() in keywords
+    override fun couldBeCategory(token: String): Boolean {
+        val lower = token.lowercase()
+        if (lower in staticKeywords) return true
+        return dynamicNamesProvider().any { it.lowercase() == lower || it.lowercase().startsWith(lower) }
+    }
 
     override fun resolve(surfaceForm: String): CategoryRef {
-        val entry = keywords[surfaceForm.lowercase()]
-        return if (entry != null)
-            CategoryRef(surfaceForm, entry.first, entry.second, 1.0f)
-        else
-            CategoryRef(surfaceForm, null, null, 0.0f)
+        val lower = surfaceForm.lowercase()
+        val staticEntry = staticKeywords[lower]
+        if (staticEntry != null) {
+            return CategoryRef(surfaceForm, staticEntry.first, staticEntry.second, 1.0f)
+        }
+        // Check dynamic DB categories (exact name match → use name itself as DB id)
+        val dynMatch = dynamicNamesProvider().firstOrNull { it.lowercase() == lower || it.lowercase().startsWith(lower) }
+        if (dynMatch != null) {
+            return CategoryRef(surfaceForm, 0L, dynMatch.lowercase(), 0.9f)
+        }
+        return CategoryRef(surfaceForm, null, null, 0.0f)
     }
 
     fun knownCategories(): List<String> =
-        keywords.values.map { it.second }.distinct()
+        (staticKeywords.values.map { it.second } + dynamicNamesProvider()).distinct()
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -115,10 +142,11 @@ object QueryEngineFactory {
         scopeIdProvider: () -> String,
         apiKeyProvider: () -> String,
         entityNamesProvider: () -> List<String>,
+        categoryNamesProvider: () -> List<String> = { emptyList() },
         telemetry: (com.ledger.query.exec.QueryTrace) -> Unit = {}
     ): QueryEngine {
         val entityResolver = LiveEntityResolver(entityNamesProvider)
-        val categoryResolver = LiveCategoryResolver()
+        val categoryResolver = LiveCategoryResolver(categoryNamesProvider)
 
         val router = QueryRouter(
             entityResolver = entityResolver,
@@ -140,6 +168,6 @@ object QueryEngineFactory {
         )
     }
 
-    /** Helper: extract the category name list from a LiveCategoryResolver. */
+    /** Helper: static category names (used before DB is loaded). */
     fun categoryNames(): List<String> = LiveCategoryResolver().knownCategories()
 }

@@ -144,14 +144,23 @@ class TransactionRepository(
         startMs: Long,
         endMs: Long
     ): com.example.ai.query.QueryAggregate {
-        val rows = transactionDao.getQueryAggregateRows(entity, categoryId, direction, startMs, endMs, getScopeId())
-        val total = rows.sumOf { it.amount }
-        val ids = rows.map { it.id }
-        return com.example.ai.query.QueryAggregate(
-            totalAmount = total,
-            count = rows.size,
-            transactionIds = ids
-        )
+        if (direction == null) {
+            // Net balance: sign-correct in SQL (INCOME/CREDIT = +, everything else = -).
+            // Summing raw amounts in-memory when direction=null gives gross volume (wrong).
+            val row = transactionDao.getNetBalanceRow(entity, categoryId, startMs, endMs, getScopeId())
+            val net   = row?.netAmount ?: 0.0
+            val count = row?.rowCount  ?: 0
+            val ids   = row?.idList?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+            return com.example.ai.query.QueryAggregate.fromDouble(net, count, ids)
+        } else {
+            // Directional query: SQL already filters to one sign (all amounts are same-sign).
+            val rows = transactionDao.getQueryAggregateRows(entity, categoryId, direction, startMs, endMs, getScopeId())
+            return com.example.ai.query.QueryAggregate.fromDouble(
+                rows.sumOf { it.amount },
+                rows.size,
+                rows.map { it.id }
+            )
+        }
     }
 
     suspend fun getEntityNetBalance(
@@ -163,14 +172,51 @@ class TransactionRepository(
         val net = row?.netAmount ?: 0.0
         val count = row?.rowCount ?: 0
         val ids = row?.idList?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
-        return com.example.ai.query.QueryAggregate(
-            totalAmount = net,
-            count = count,
-            transactionIds = ids
+        return com.example.ai.query.QueryAggregate.fromDouble(net, count, ids)
+    }
+
+    suspend fun getQueryAggregatePaise(
+        entity: String?,
+        categoryId: String?,
+        direction: com.example.ai.model.Direction?,
+        startMs: Long?,
+        endMs: Long?
+    ): com.example.ai.query.QueryAggregate {
+        val scope = getScopeId()
+        val row = when {
+            entity != null && direction == com.example.ai.model.Direction.EXPENSE ->
+                transactionDao.getEntityOutgoingPaise(entity, scope, startMs, endMs)
+            entity != null && direction == com.example.ai.model.Direction.TRANSFER ->
+                transactionDao.getEntityOutgoingPaise(entity, scope, startMs, endMs)
+            entity != null && direction == com.example.ai.model.Direction.DEBIT ->
+                transactionDao.getEntityOutgoingPaise(entity, scope, startMs, endMs)
+            entity != null && direction == com.example.ai.model.Direction.INCOME ->
+                transactionDao.getEntityIncomingPaise(entity, scope, startMs, endMs)
+            entity != null && direction == com.example.ai.model.Direction.CREDIT ->
+                transactionDao.getEntityIncomingPaise(entity, scope, startMs, endMs)
+            entity != null ->
+                transactionDao.getEntityNetBalancePaise(entity, scope, startMs, endMs)
+            direction == com.example.ai.model.Direction.INCOME ||
+            direction == com.example.ai.model.Direction.CREDIT ->
+                transactionDao.getScopeDirectionalPaise(categoryId, "IN", scope, startMs, endMs)
+            direction == com.example.ai.model.Direction.EXPENSE ||
+            direction == com.example.ai.model.Direction.TRANSFER ||
+            direction == com.example.ai.model.Direction.DEBIT ->
+                transactionDao.getScopeDirectionalPaise(categoryId, "OUT", scope, startMs, endMs)
+            else ->
+                transactionDao.getScopeNetBalancePaise(categoryId, scope, startMs, endMs)
+        }
+        return com.example.ai.query.QueryAggregate.fromPaise(
+            paise = row?.netAmountPaise ?: 0L,
+            count = row?.rowCount ?: 0,
+            ids = row?.idList?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
         )
     }
 
     suspend fun getDistinctTitles(): List<String> = transactionDao.getDistinctTitles(getScopeId())
+
+    suspend fun getByIds(ids: List<String>): List<Transaction> =
+        if (ids.isEmpty()) emptyList() else transactionDao.getByIds(ids, getScopeId())
 
     suspend fun getIncomeExpenseTotalsForRange(startMs: Long, endMs: Long) =
         transactionDao.getIncomeExpenseTotalsForRange(startMs, endMs, getScopeId())

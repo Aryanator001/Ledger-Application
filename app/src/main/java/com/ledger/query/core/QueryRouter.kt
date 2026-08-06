@@ -68,6 +68,15 @@ class QueryRouter(
     )
 
     private fun decide(frame: QueryFrame): Decision {
+        // Rule 0: entity token was attempted via marker but not found in DB → ask clarification
+        if (frame.entity != null && frame.entity.id == null && !frame.entity.isAmbiguous) {
+            return Decision(
+                Tier.CLARIFY, 1.0f,
+                "entity '${frame.entity.surfaceForm}' not found in known transactions",
+                emptyList()
+            )
+        }
+
         // Rule 1: analytical markers veto everything — reasoning beats retrieval
         if (frame.analyticalMarkers.isNotEmpty()) {
             return Decision(
@@ -289,16 +298,15 @@ class QueryRouter(
                         }
                     }
                 }
-                // Single token after the marker
+                // Single token after the marker — always capture attempted entity (even if not found)
                 if (i + 1 < tokens.size && !claimed[i + 1] && !Lexicon.isNoise(tokens[i + 1])) {
                     val surf = tokens[i + 1]
                     if (entityResolver.couldBeEntity(surf)) {
                         val ref = entityResolver.resolve(surf)
-                        if (ref.id != null || ref.isAmbiguous) {
-                            entity = ref
-                            entityIndices += i + 1
-                            break@outer
-                        }
+                        // Capture even if unresolved — Rule 0 will trigger CLARIFY
+                        entity = ref
+                        entityIndices += i + 1
+                        break@outer
                     }
                 }
             }
@@ -350,7 +358,26 @@ class QueryRouter(
             }
         }
 
-        // ── Step j: Residual — unclaimed, non-noise, non-analytical, non-integer ──
+        // ── Step j: Payment method ────────────────────────────────────────────
+        var paymentMethod: String? = null
+        for (i in tokens.indices) {
+            if (claimed[i]) continue
+            val t = tokens[i]
+            val pm = when {
+                t in Lexicon.PAYMENT_CASH -> "cash"
+                t in Lexicon.PAYMENT_UPI  -> "upi"
+                t in Lexicon.PAYMENT_BANK -> "bank"
+                else -> null
+            }
+            if (pm != null) {
+                paymentMethod = pm
+                claimed[i] = true
+                consumed[t] = "PAYMENT_METHOD"
+                break
+            }
+        }
+
+        // ── Step k: Residual — unclaimed, non-noise, non-analytical, non-integer ──
         val residual = tokens.indices
             .filter { i ->
                 !claimed[i] &&
@@ -377,7 +404,8 @@ class QueryRouter(
             hasMetricSignal = hasMetricSignal,
             residual = residual,
             consumed = consumed.toMap(),
-            analyticalMarkers = analyticalMarkers.toList()
+            analyticalMarkers = analyticalMarkers.toList(),
+            paymentMethod = paymentMethod
         )
     }
 

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -52,7 +53,7 @@ import kotlin.math.sqrt
 class SarvamSttProvider(private val context: Context) : SttProvider {
 
     private val handler = Handler(Looper.getMainLooper())
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Session counter — incremented on every start(). Threads and coroutines
     // capture their session at start; any stale work sees sessionId != mySession
@@ -93,6 +94,10 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
     // -------------------------------------------------------------------------
 
     override fun start(callbacks: SttCallbacks) {
+        // Recreate scope if release() was called previously (e.g. during a navigation
+        // disposal that incorrectly called release() instead of cancel()).
+        if (!scope.isActive) scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
         // Capture the old recording thread BEFORE stopInternals clears the reference,
         // so we can join it and ensure the old AudioRecord is released before we
         // allocate a new one. (Android allows only one active AudioRecord at a time.)
@@ -247,6 +252,7 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
 
     override fun cancel() {
         stopInternals(discard = true)
+        scope.cancel()
     }
 
     override fun release() {

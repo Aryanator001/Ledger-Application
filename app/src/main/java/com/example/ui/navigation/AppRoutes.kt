@@ -23,5 +23,7 @@ data class FilteredLedger(
     val direction: String? = null,
     val categoryId: String? = null,
     val timeRangeStart: Long? = null,
-    val timeRangeEnd: Long? = null
+    val timeRangeEnd: Long? = null,
+    /** Comma-separated transaction IDs — when present, bypasses re-filter and loads exact rows */
+    val transactionIds: String? = null
 ) : AppRoute

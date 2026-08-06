@@ -26,12 +26,10 @@ class AnalyticsRepository(
             return null
         }
 
-        return QueryAggregate(
-            totalAmount = cached.totalAmount,
-            count = cached.count,
-            transactionIds = cached.transactionIds
-                .split(",")
-                .filter { it.isNotBlank() }
+        return QueryAggregate.fromDouble(
+            cached.totalAmount,
+            cached.count,
+            cached.transactionIds.split(",").filter { it.isNotBlank() }
         )
     }
 

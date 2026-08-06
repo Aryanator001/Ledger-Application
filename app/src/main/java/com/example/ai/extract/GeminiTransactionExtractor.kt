@@ -34,7 +34,11 @@ class GeminiTransactionExtractor : TransactionExtractor {
 
     private val systemInstruction = """
         You are a precise transaction extraction engine for an Indian accounting app.
-        Extract structured data from the user's spoken transaction in English, Hindi, or Hinglish (Latin script).
+        Extract structured data from the user's spoken transaction in English, Hindi (Devanagari or romanized), or Hinglish.
+
+        Compound Hindi numbers — always resolve to a single numeric value:
+        "do sau"/"दो सौ" = 200, "teen sau" = 300, "panch sau"/"पाँच सौ" = 500,
+        "do hazaar"/"दो हज़ार" = 2000, "panch hazaar" = 5000, "do lakh" = 200000.
 
         Return ONLY a valid JSON object. No prose. No markdown. No code fences. Keep every string field under 80 characters.
         The JSON must have exactly these keys:
@@ -69,6 +73,11 @@ class GeminiTransactionExtractor : TransactionExtractor {
         - cash/nakad/naqad → cash; phonepe/gpay/paytm/upi/online → upi; bank/neft/imps/account → bank.
         - Default to cash if unclear.
 
+        Examples (input → JSON):
+        - "do sau rupaye khane pe laga" → {"amount":200,"direction":"EXPENSE","entity":"Khana","category":"food","paymentMethod":"cash","notes":null}
+        - "Ramesh ko panch hazaar diya" → {"amount":5000,"direction":"EXPENSE","entity":"Ramesh","category":"general","paymentMethod":"cash","notes":null}
+        - "salary mili 45000" → {"amount":45000,"direction":"INCOME","entity":"Salary","category":"general","paymentMethod":"bank","notes":null}
+
         Notes:
         - Include any deferred timing ("next week", "kal dega"), purpose, or extra context. Max 80 chars. Null if nothing to add.
         - amount: numeric value only, no currency symbols or units.
@@ -101,7 +110,7 @@ class GeminiTransactionExtractor : TransactionExtractor {
                     })
                 })
                 put("generationConfig", JSONObject().apply {
-                    put("temperature", 0.05)
+                    put("temperature", 0.1)
                     put("maxOutputTokens", 300)
                     put("responseMimeType", "application/json")
                 })

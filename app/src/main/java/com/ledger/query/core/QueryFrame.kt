@@ -54,7 +54,8 @@ data class QueryFrame(
     val hasMetricSignal: Boolean = false,
     val residual: List<String> = emptyList(),
     val consumed: Map<String, String> = emptyMap(),
-    val analyticalMarkers: List<String> = emptyList()
+    val analyticalMarkers: List<String> = emptyList(),
+    val paymentMethod: String? = null
 )
 
 data class QueryPlan(

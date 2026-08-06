@@ -161,6 +161,33 @@ interface TransactionDao {
         endMs: Long,
         ledgerScopeId: String
     ): EntityBalanceRow?
+    /**
+     * Generic signed-sum aggregate. When direction is null (net balance queries), returns
+     * SUM(CASE WHEN income/credit THEN +amount ELSE -amount END) so gross volume is never
+     * mistakenly returned as a net balance. This replaces in-memory sumOf{} for null-direction
+     * paths in TransactionRepository.getQueryAggregate().
+     */
+    @Query("""
+        SELECT
+            SUM(CASE WHEN type IN ('INCOME', 'CREDIT') THEN amount ELSE -amount END) AS netAmount,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE (:entity IS NULL OR title LIKE '%' || :entity || '%')
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND date >= :startMs
+          AND date <= :endMs
+          AND ledger_scope_id = :ledgerScopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getNetBalanceRow(
+        entity: String?,
+        categoryId: String?,
+        startMs: Long,
+        endMs: Long,
+        ledgerScopeId: String
+    ): EntityBalanceRow?
+
     @Query("SELECT DISTINCT title FROM transactions WHERE title != '' AND ledger_scope_id = :ledgerScopeId AND is_deleted = 0 ORDER BY title")
     suspend fun getDistinctTitles(ledgerScopeId: String): List<String>
 
@@ -191,7 +218,8 @@ interface TransactionDao {
           AND (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
     """)
@@ -199,6 +227,7 @@ interface TransactionDao {
         entityPrefix: String?,
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -211,12 +240,14 @@ interface TransactionDao {
         FROM transactions
         WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
           AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
     """)
     suspend fun execNetScalar(
         entityPrefix: String?,
         categoryId: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -228,7 +259,8 @@ interface TransactionDao {
           AND (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
     """)
@@ -236,6 +268,7 @@ interface TransactionDao {
         entityPrefix: String?,
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -247,7 +280,8 @@ interface TransactionDao {
           AND (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
     """)
@@ -255,6 +289,7 @@ interface TransactionDao {
         entityPrefix: String?,
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -266,7 +301,8 @@ interface TransactionDao {
           AND (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
     """)
@@ -274,6 +310,7 @@ interface TransactionDao {
         entityPrefix: String?,
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -285,7 +322,8 @@ interface TransactionDao {
           AND (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
         ORDER BY date DESC
@@ -295,6 +333,7 @@ interface TransactionDao {
         entityPrefix: String?,
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String,
@@ -307,7 +346,8 @@ interface TransactionDao {
         WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
         GROUP BY category_id
@@ -316,6 +356,7 @@ interface TransactionDao {
     suspend fun execGroupByCategory(
         entityPrefix: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String
@@ -327,7 +368,8 @@ interface TransactionDao {
         WHERE (:categoryId IS NULL OR category_id = :categoryId)
           AND (:dirType IS NULL
                OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
-               OR (:dirType = 'OUT' AND type = 'EXPENSE'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
           AND date >= :startMs AND date <= :endMs
           AND ledger_scope_id = :scopeId AND is_deleted = 0
         GROUP BY title
@@ -337,11 +379,143 @@ interface TransactionDao {
     suspend fun execGroupByEntity(
         categoryId: String?,
         dirType: String?,
+        paymentMethod: String?,
         startMs: Long,
         endMs: Long,
         scopeId: String,
         limit: Int
     ): List<ExecEntityGroupRow>
+
+    @Query("""
+        SELECT GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE (:entityPrefix IS NULL OR LOWER(title) LIKE :entityPrefix)
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:dirType IS NULL
+               OR (:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:paymentMethod IS NULL OR payment_method = :paymentMethod)
+          AND date >= :startMs AND date <= :endMs
+          AND ledger_scope_id = :scopeId AND is_deleted = 0
+    """)
+    suspend fun execIdList(
+        entityPrefix: String?,
+        categoryId: String?,
+        dirType: String?,
+        paymentMethod: String?,
+        startMs: Long,
+        endMs: Long,
+        scopeId: String
+    ): ExecIdListRow?
+
+    @Query("SELECT * FROM transactions WHERE id IN (:ids) AND ledger_scope_id = :scopeId AND is_deleted = 0 ORDER BY date DESC")
+    suspend fun getByIds(ids: List<String>, scopeId: String): List<Transaction>
+
+    // ─── Paise-precision aggregate queries (Stage 3 — exact-match, no LIKE) ──
+
+    @Query("""
+        SELECT
+            COALESCE(CAST(ROUND(
+                SUM(CASE WHEN type IN ('INCOME','CREDIT') THEN amount ELSE -amount END) * 100
+            ) AS INTEGER), 0) AS netAmountPaise,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE LOWER(title) = LOWER(:canonicalTitle)
+          AND (:startTime IS NULL OR date >= :startTime)
+          AND (:endTime IS NULL OR date <= :endTime)
+          AND ledger_scope_id = :scopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getEntityNetBalancePaise(
+        canonicalTitle: String,
+        scopeId: String,
+        startTime: Long?,
+        endTime: Long?
+    ): PaiseBalanceRow?
+
+    @Query("""
+        SELECT
+            COALESCE(CAST(ROUND(SUM(amount) * 100) AS INTEGER), 0) AS netAmountPaise,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE LOWER(title) = LOWER(:canonicalTitle)
+          AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')
+          AND (:startTime IS NULL OR date >= :startTime)
+          AND (:endTime IS NULL OR date <= :endTime)
+          AND ledger_scope_id = :scopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getEntityOutgoingPaise(
+        canonicalTitle: String,
+        scopeId: String,
+        startTime: Long?,
+        endTime: Long?
+    ): PaiseBalanceRow?
+
+    @Query("""
+        SELECT
+            COALESCE(CAST(ROUND(SUM(amount) * 100) AS INTEGER), 0) AS netAmountPaise,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE LOWER(title) = LOWER(:canonicalTitle)
+          AND type IN ('INCOME', 'CREDIT')
+          AND (:startTime IS NULL OR date >= :startTime)
+          AND (:endTime IS NULL OR date <= :endTime)
+          AND ledger_scope_id = :scopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getEntityIncomingPaise(
+        canonicalTitle: String,
+        scopeId: String,
+        startTime: Long?,
+        endTime: Long?
+    ): PaiseBalanceRow?
+
+    @Query("""
+        SELECT
+            COALESCE(CAST(ROUND(
+                SUM(CASE WHEN type IN ('INCOME','CREDIT') THEN amount ELSE -amount END) * 100
+            ) AS INTEGER), 0) AS netAmountPaise,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:startTime IS NULL OR date >= :startTime)
+          AND (:endTime IS NULL OR date <= :endTime)
+          AND ledger_scope_id = :scopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getScopeNetBalancePaise(
+        categoryId: String?,
+        scopeId: String,
+        startTime: Long?,
+        endTime: Long?
+    ): PaiseBalanceRow?
+
+    @Query("""
+        SELECT
+            COALESCE(CAST(ROUND(SUM(amount) * 100) AS INTEGER), 0) AS netAmountPaise,
+            COUNT(*) AS rowCount,
+            GROUP_CONCAT(id) AS idList
+        FROM transactions
+        WHERE (:categoryId IS NULL OR category_id = :categoryId)
+          AND ((:dirType = 'IN' AND type IN ('INCOME', 'CREDIT'))
+               OR (:dirType = 'OUT' AND type IN ('EXPENSE', 'TRANSFER', 'DEBIT')))
+          AND (:startTime IS NULL OR date >= :startTime)
+          AND (:endTime IS NULL OR date <= :endTime)
+          AND ledger_scope_id = :scopeId
+          AND is_deleted = 0
+    """)
+    suspend fun getScopeDirectionalPaise(
+        categoryId: String?,
+        dirType: String,
+        scopeId: String,
+        startTime: Long?,
+        endTime: Long?
+    ): PaiseBalanceRow?
 }
 
 data class IncomeExpenseTotalsRow(
@@ -372,4 +546,12 @@ data class ExecEntityGroupRow(
     val title: String,
     val total: Double,
     val cnt: Int
+)
+
+data class ExecIdListRow(val idList: String?)
+
+data class PaiseBalanceRow(
+    val netAmountPaise: Long,
+    val rowCount: Int,
+    val idList: String?
 )

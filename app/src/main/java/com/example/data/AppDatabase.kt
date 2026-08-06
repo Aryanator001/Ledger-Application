@@ -11,7 +11,7 @@ import com.example.analytics.AnalyticsCacheDao
 import com.ledger.query.exec.QueryPlanCacheDao
 import com.ledger.query.exec.QueryPlanCacheEntity
 
-@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class, UserProfile::class, LedgerScope::class, QueryPlanCacheEntity::class], version = 11, exportSchema = false)
+@Database(entities = [Transaction::class, Category::class, Account::class, Budget::class, AnalyticsCache::class, UserProfile::class, LedgerScope::class, QueryPlanCacheEntity::class], version = 12, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
@@ -147,6 +147,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE transactions ADD COLUMN payment_method TEXT DEFAULT NULL")
+            }
+        }
+
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -182,7 +188,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ledger_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

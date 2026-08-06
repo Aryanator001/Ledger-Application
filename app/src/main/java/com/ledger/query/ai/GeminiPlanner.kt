@@ -42,7 +42,7 @@ class GeminiPlannerImpl(
 ) : AiPlanner {
 
     private val endpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
     private val systemPrompt = """
 You translate shopkeeper accounting questions into a JSON query plan.
@@ -233,7 +233,6 @@ Rules:
         }
         entity?.let { parts += it }
         category?.let { parts += it }
-        parts += "$start to $end"
         return parts.joinToString(" · ")
     }
 }

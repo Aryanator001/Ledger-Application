@@ -5,5 +5,7 @@ data class QueryResponse(
     val totalAmount: Double,
     val transactionCount: Int,
     val transactionIds: List<String>,
-    val query: ParsedQuery
+    val query: ParsedQuery,
+    val timeContext: String? = null,
+    val direction: String? = null
 )

@@ -51,6 +51,7 @@ data class Transaction(
     
     @ColumnInfo(name = "ledger_scope_id") val ledgerScopeId: String? = null,
     @ColumnInfo(name = "last_updated") val lastUpdated: Long = System.currentTimeMillis(),
-    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false,
+    @ColumnInfo(name = "payment_method") val paymentMethod: String? = null
 )
 

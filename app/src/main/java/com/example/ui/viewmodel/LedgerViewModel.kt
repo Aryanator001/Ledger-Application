@@ -80,7 +80,7 @@ class LedgerViewModel(
                     return@launch
                 }
 
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$apiKey"
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$apiKey"
 
                 val functionDeclaration = JSONObject().apply {
                     put("name", "getPartyBalance")
@@ -374,16 +374,17 @@ class LedgerViewModel(
 
     // Add new transaction
     fun addTransaction(
-        title: String, 
-        amount: Double, 
-        type: String, 
-        description: String? = null, 
-        rawTranscript: String? = null, 
-        categoryId: String = "general", 
-        accountId: String = "default_cash", 
+        title: String,
+        amount: Double,
+        type: String,
+        description: String? = null,
+        rawTranscript: String? = null,
+        categoryId: String = "general",
+        accountId: String = "default_cash",
         toAccountId: String? = null,
-        tags: String = "", 
-        date: Long = System.currentTimeMillis()
+        tags: String = "",
+        date: Long = System.currentTimeMillis(),
+        paymentMethod: String? = null
     ) {
         viewModelScope.launch {
             val transaction = Transaction(
@@ -396,7 +397,8 @@ class LedgerViewModel(
                 description = description?.trim(),
                 rawTranscript = rawTranscript,
                 tags = tags,
-                date = date
+                date = date,
+                paymentMethod = paymentMethod
             )
             repository.insertTransaction(transaction)
         }

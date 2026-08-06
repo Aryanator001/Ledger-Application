@@ -180,6 +180,24 @@ object Lexicon {
         "vistrit", "talasho", "badho"
     )
 
+    val PAYMENT_CASH: Set<String> = setOf(
+        "cash", "nakad", "naqad", "haath", "nakit",
+        "रोकड़", "नकद",
+        "rokad"
+    )
+
+    val PAYMENT_UPI: Set<String> = setOf(
+        "upi", "phonepe", "gpay", "paytm", "online", "digitally", "digital",
+        "phonepay", "googlepay", "bhim",
+        "यूपीआई"
+    )
+
+    val PAYMENT_BANK: Set<String> = setOf(
+        "bank", "neft", "imps", "rtgs", "transfer", "wire", "account",
+        "cheque", "check",
+        "बैंक"
+    )
+
     fun isNoise(token: String): Boolean =
         token in STOPWORDS || token.isBlank() || token.length <= 1
 
@@ -187,5 +205,6 @@ object Lexicon {
         DIRECTION_OUT + DIRECTION_IN + DIRECTION_NET +
         METRIC_SUM + METRIC_COUNT + METRIC_AVG + METRIC_MAX + METRIC_MIN + METRIC_LIST +
         GROUP_BY_ENTITY + GROUP_BY_CATEGORY + GROUP_BY_MONTH +
-        SELF_REF + ENTITY_MARKER_PRE + ENTITY_MARKER_POST
+        SELF_REF + ENTITY_MARKER_PRE + ENTITY_MARKER_POST +
+        PAYMENT_CASH + PAYMENT_UPI + PAYMENT_BANK
 }

@@ -92,6 +92,30 @@ class TranscriptNormalizer {
     // Currency symbol characters to strip.
     private val currencySymbols = setOf('₹', '$', '€', '£')
 
+    // Devanagari digit characters → ASCII (e.g. "१०" → "10").
+    private val devanagariDigitMap = mapOf(
+        '०' to '0', '१' to '1', '२' to '2', '३' to '3', '४' to '4',
+        '५' to '5', '६' to '6', '७' to '7', '८' to '8', '९' to '9'
+    )
+
+    // Devanagari words → Latin equivalents that the existing tokenizer already handles.
+    // Ordered longest-match-first so compound keys replace before their sub-strings.
+    private val devanagariWordSubs = listOf(
+        "हज़ार" to "hazaar", "हजार" to "hazaar",
+        "करोड़" to "crore",  "करोड" to "crore",
+        "रुपये" to "rupaye", "रुपया" to "rupaya", "रूपये" to "rupaye",
+        "लाख"  to "lakh",   "लख"   to "lakh",
+        "सौ"   to "sau",
+        "शून्य" to "sifar",  "एक"   to "ek",    "दो"   to "do",
+        "तीन"  to "teen",   "चार"  to "char",  "पाँच" to "panch",
+        "पांच" to "panch",  "छह"   to "chhe",  "सात"  to "saat",
+        "आठ"   to "aath",   "नौ"   to "nau",   "दस"   to "das",
+        "बीस"  to "bees",   "तीस"  to "tees",  "चालीस" to "chalees",
+        "पचास" to "pachas", "साठ"  to "saath", "सत्तर" to "sattar",
+        "अस्सी" to "assi",  "नब्बे" to "nabbe",
+        "रु"   to "rs"
+    )
+
     /**
      * Normalize a transcript:
      * 1. Lowercase and tokenize.
@@ -108,8 +132,16 @@ class TranscriptNormalizer {
     fun normalize(transcript: String): String {
         if (transcript.isBlank()) return transcript
 
+        // 1. Convert Devanagari digit characters to ASCII so "१०" → "10".
+        var cleaned = transcript.map { devanagariDigitMap[it] ?: it }.joinToString("")
+
+        // 2. Replace Devanagari words with Latin equivalents before tokenizing, so
+        //    "दो सौ रुपये" → "do sau rupaye" and the existing multiplier logic resolves
+        //    it to 200 without any additional code.
+        devanagariWordSubs.forEach { (dev, roman) -> cleaned = cleaned.replace(dev, roman) }
+
         // Remove currency symbols inline.
-        var cleaned = transcript.lowercase().trim()
+        cleaned = cleaned.lowercase().trim()
         currencySymbols.forEach { cleaned = cleaned.replace(it.toString(), " ") }
 
         // Split compact number+suffix tokens so the token loop can handle them.
