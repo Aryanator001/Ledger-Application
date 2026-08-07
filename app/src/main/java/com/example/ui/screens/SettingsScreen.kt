@@ -9,13 +9,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -26,11 +27,14 @@ import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.viewmodel.AuthViewModel
 import com.example.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    authViewModel: AuthViewModel,
+    onNavigateToProfile: () -> Unit,
     onNavigateToGeneral: () -> Unit,
     onNavigateToSecurity: () -> Unit,
     onNavigateToCurrency: () -> Unit,
@@ -39,6 +43,12 @@ fun SettingsScreen(
     onNavigateToAccounts: () -> Unit
 ) {
     val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
+    val session by authViewModel.activeSession.collectAsStateWithLifecycle()
+    val initials = remember(session?.displayName) {
+        session?.displayName.orEmpty().trim().split(" ").take(2)
+            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+            .joinToString("").ifEmpty { "?" }
+    }
 
     Column(
         modifier = Modifier
@@ -55,8 +65,12 @@ fun SettingsScreen(
             modifier = Modifier.padding(16.dp)
         )
 
-        // 2. Upgrade Banner
-        UpgradeBanner(onClick = { /* Navigate to ProUpgradeScreen */ })
+        // 2. Profile Card
+        ProfileCard(
+            displayName = session?.displayName.orEmpty(),
+            initials = initials,
+            onClick = onNavigateToProfile
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -118,7 +132,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 4. Section 2 — Support & info group
+        // 5. Section 2 — Support & info group
         Card(
             shape = AppShapes.xl,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.bgSurface),
@@ -149,61 +163,6 @@ fun SettingsScreen(
                     onPress = { /* Trigger native share sheet */ }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun UpgradeBanner(onClick: () -> Unit) {
-    Card(
-        shape = AppShapes.lg,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.primary),
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Badge icon
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Stars,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.settings_upgrade_to_pro),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = AppTypography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stringResource(R.string.settings_unlock_all_features),
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                    style = AppTypography.bodySmall
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }
@@ -293,6 +252,59 @@ fun SettingsRow(
                 modifier = Modifier.padding(start = 56.dp), // Inset from left: starts after icon
                 thickness = 0.5.dp,
                 color = MaterialTheme.appColors.borderLight
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileCard(
+    displayName: String,
+    initials: String,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = AppShapes.xl,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.appColors.primary),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = initials,
+                    style = AppTypography.headline2,
+                    color = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = displayName.ifEmpty { stringResource(R.string.settings_profile_name_placeholder) },
+                    style = AppTypography.headline2,
+                    color = Color.White
+                )
+                Text(
+                    text = stringResource(R.string.settings_view_profile),
+                    style = AppTypography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.White
             )
         }
     }

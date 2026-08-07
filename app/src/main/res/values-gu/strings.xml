@@ -386,4 +386,27 @@
     <string name="nav_settings">સેટિંગ્સ</string>
     <string name="filtered_ledger_title">ફિલ્ટર કરેલ પરિણામો</string>
     <string name="back">પાછળ</string>
+    <string name="settings_view_profile">પ્રોફ઼ાઇલ જુઓ</string>
+    <string name="settings_profile_name_placeholder">તમારું નામ</string>
+    <string name="profile_screen_title">પ્રોફ઼ાઇલ</string>
+    <string name="profile_edit">સંપાદિત કરો</string>
+    <string name="profile_save">સાચવો</string>
+    <string name="profile_cancel">રદ કરો</string>
+    <string name="profile_section_personal">વ્યક્તિગત માહિતી</string>
+    <string name="profile_full_name">પૂરું નામ</string>
+    <string name="profile_email">ઈ-મેઇલ</string>
+    <string name="profile_phone">ફ઼ોન નંબર</string>
+    <string name="profile_section_business">વ્યવસાયિક વિગતો</string>
+    <string name="profile_business_name">વ્યવસાયનું નામ</string>
+    <string name="profile_business_type">વ્યવસાયનો પ્રકાર</string>
+    <string name="profile_business_address">વ્યવસાયનું સરનામું</string>
+    <string name="profile_website">વેબસાઇટ</string>
+    <string name="profile_section_tax">કર માહિતી</string>
+    <string name="profile_gst_number">જીએસટી નંબર</string>
+    <string name="profile_pan_number">પૅન નંબર</string>
+    <string name="profile_not_set">સેટ નથી</string>
+    <string name="profile_sign_out">સાઇન આઉટ</string>
+    <string name="profile_sign_out_title">સાઇન આઉટ કરીએ?</string>
+    <string name="profile_sign_out_message">શું તમે સાઇન આઉટ કરવા માંગો છો?</string>
+    <string name="profile_sign_out_confirm">સાઇન આઉટ</string>
 </resources>

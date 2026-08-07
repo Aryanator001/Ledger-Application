@@ -392,4 +392,27 @@
     <string name="nav_settings">Settings</string>
     <string name="filtered_ledger_title">Filtered Results</string>
     <string name="back">Back</string>
+    <string name="settings_view_profile">View profile</string>
+    <string name="settings_profile_name_placeholder">Your Name</string>
+    <string name="profile_screen_title">Profile</string>
+    <string name="profile_edit">Edit</string>
+    <string name="profile_save">Save</string>
+    <string name="profile_cancel">Cancel</string>
+    <string name="profile_section_personal">Personal Information</string>
+    <string name="profile_full_name">Full Name</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_phone">Phone Number</string>
+    <string name="profile_section_business">Business Details</string>
+    <string name="profile_business_name">Business Name</string>
+    <string name="profile_business_type">Business Type</string>
+    <string name="profile_business_address">Business Address</string>
+    <string name="profile_website">Website</string>
+    <string name="profile_section_tax">Tax Information</string>
+    <string name="profile_gst_number">GST Number</string>
+    <string name="profile_pan_number">PAN Number</string>
+    <string name="profile_not_set">Not set</string>
+    <string name="profile_sign_out">Sign Out</string>
+    <string name="profile_sign_out_title">Sign Out?</string>
+    <string name="profile_sign_out_message">Are you sure you want to sign out?</string>
+    <string name="profile_sign_out_confirm">Sign Out</string>
 </resources>

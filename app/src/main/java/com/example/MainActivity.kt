@@ -103,6 +103,7 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
     }
     object Login : Route("login", "Login", Icons.Default.Settings)
     object ProfileSetup : Route("profile_setup", "Profile Setup", Icons.Default.Settings)
+    object Profile : Route("profile", "Profile", Icons.Default.Settings)
 }
 
 val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
@@ -438,12 +439,21 @@ fun MainScreen(
                 composable(Route.Settings.route) {
                     SettingsScreen(
                         viewModel = settingsViewModel,
+                        authViewModel = authViewModel,
+                        onNavigateToProfile = { navController.navigate(Route.Profile.route) },
                         onNavigateToGeneral = { navController.navigate(Route.GeneralSettings.route) },
                         onNavigateToSecurity = { navController.navigate(Route.SecuritySettings.route) },
                         onNavigateToCurrency = { navController.navigate(Route.CurrencyPicker.route) },
                         onNavigateToBackup = { navController.navigate(Route.BackupRestore.route) },
                         onNavigateToReminders = { navController.navigate(Route.Reminders.route) },
                         onNavigateToAccounts = { navController.navigate(Route.AccountList.route) }
+                    )
+                }
+                composable(Route.Profile.route) {
+                    com.example.ui.screens.ProfileScreen(
+                        authViewModel = authViewModel,
+                        userProfileDao = app.database.userProfileDao(),
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable(Route.AccountList.route) {
