@@ -74,6 +74,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.ViewModel
 import com.example.ui.screens.ChangePINScreen
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.security.SecuritySettingsScreen
 import com.example.ui.screens.SetPINScreen
 import com.example.ui.screens.CurrencyPickerScreen
@@ -81,6 +82,9 @@ import com.example.ui.screens.BackupRestoreScreen
 import com.example.ui.screens.RemindersScreen
 import com.example.ui.screens.RecurringRemindersListScreen
 import com.example.ui.security.SecurityViewModel
+import com.example.ui.viewmodel.OnboardingViewModel
+import com.example.ui.viewmodel.OnboardingViewModelFactory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 
@@ -104,6 +108,7 @@ sealed class Route(val route: String, val title: String, val icon: ImageVector) 
     object Login : Route("login", "Login", Icons.Default.Settings)
     object ProfileSetup : Route("profile_setup", "Profile Setup", Icons.Default.Settings)
     object Profile : Route("profile", "Profile", Icons.Default.Settings)
+    object Onboarding : Route("onboarding", "Welcome", Icons.Default.Settings)
 }
 
 val bottomNavItems = listOf(Route.Home, Route.Transactions, Route.Analytics, Route.Settings)
@@ -161,16 +166,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val initialThemeMode = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        data class StartupPrefs(val theme: String, val hasSeenOnboarding: Boolean)
+        val startupPrefs = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
             try {
-                val mode = app.userPreferences.theme.first()
+                val theme = app.userPreferences.theme.first()
+                val seen = app.userPreferences.hasSeenOnboarding.first()
                 isThemeLoaded = true
-                mode
+                StartupPrefs(theme, seen)
             } catch (e: Exception) {
                 isThemeLoaded = true
-                "System"
+                StartupPrefs("System", false)
             }
         }
+        val initialThemeMode = startupPrefs.theme
+        val initialHasSeenOnboarding = startupPrefs.hasSeenOnboarding
 
 
         // Use explicit SystemBarStyle (not the default auto) so the OnPreDrawListener
@@ -227,6 +236,9 @@ class MainActivity : AppCompatActivity() {
             val authFactory = com.example.ui.viewmodel.AuthViewModelFactory(app.authRepository, app.securityStore)
             val authViewModel: com.example.ui.viewmodel.AuthViewModel = viewModel(factory = authFactory)
 
+            val onboardingFactory = OnboardingViewModelFactory(app.userPreferences)
+            val onboardingViewModel: OnboardingViewModel = viewModel(factory = onboardingFactory)
+
             val sttProvider: SttProvider = remember { DualSttProvider(this@MainActivity) }
 
             val isLocked by com.example.data.security.AppLockManager.isLocked.collectAsStateWithLifecycle()
@@ -249,6 +261,11 @@ class MainActivity : AppCompatActivity() {
 
             MyApplicationTheme(darkTheme = darkTheme) {
                 Box(modifier = Modifier.fillMaxSize()) {
+                    val startDestination = when {
+                        !initialHasSeenOnboarding -> Route.Onboarding.route
+                        activeSession == null -> Route.Login.route
+                        else -> Route.Home.route
+                    }
                     MainScreen(
                         viewModel = viewModel,
                         settingsViewModel = settingsViewModel,
@@ -256,10 +273,11 @@ class MainActivity : AppCompatActivity() {
                         aiViewModel = aiViewModel,
                         analyticsViewModel = analyticsViewModel,
                         authViewModel = authViewModel,
+                        onboardingViewModel = onboardingViewModel,
                         sttProvider = sttProvider,
                         transactionRepository = app.repository,
                         app = app,
-                        startDestination = if (activeSession == null) Route.Login.route else Route.Home.route
+                        startDestination = startDestination
                     )
                     
                     if (appLockEnabled && isLocked) {
@@ -293,6 +311,7 @@ fun MainScreen(
     aiViewModel: AiTransactionViewModel,
     analyticsViewModel: com.example.ui.analytics.AnalyticsViewModel,
     authViewModel: com.example.ui.viewmodel.AuthViewModel,
+    onboardingViewModel: OnboardingViewModel,
     sttProvider: SttProvider,
     transactionRepository: com.example.data.TransactionRepository,
     app: LedgerApplication,
@@ -309,16 +328,22 @@ fun MainScreen(
     val rememberedStartDestination = remember { startDestination }
 
     val hasCompletedOnboarding by app.userPreferences.hasCompletedOnboarding
-        .collectAsStateWithLifecycle(initialValue = startDestination != Route.Login.route)
+        .collectAsStateWithLifecycle(initialValue = startDestination == Route.Home.route)
 
-    // If session becomes null, route to login
+    // Redirect to Login only when session transitions from authenticated → signed-out.
+    // Using a previous-value tracker avoids a false redirect on startup when activeSession
+    // starts as null (new user or first launch) and currentDestination hasn't settled yet.
     val activeSession by authViewModel.activeSession.collectAsStateWithLifecycle()
+    var prevSession by remember { mutableStateOf(activeSession) }
     LaunchedEffect(activeSession) {
-        if (activeSession == null && currentDestination?.route != Route.Login.route) {
+        val wasLoggedIn = prevSession != null
+        val isNowLoggedOut = activeSession == null
+        if (wasLoggedIn && isNowLoggedOut) {
             navController.navigate(Route.Login.route) {
                 popUpTo(0) { inclusive = true }
             }
         }
+        prevSession = activeSession
     }
 
     Scaffold(
@@ -370,6 +395,16 @@ fun MainScreen(
                 startDestination = rememberedStartDestination,
                 modifier = Modifier.fillMaxSize()
             ) {
+                composable(Route.Onboarding.route) {
+                    OnboardingScreen(
+                        viewModel = onboardingViewModel,
+                        onComplete = {
+                            navController.navigate(Route.Login.route) {
+                                popUpTo(Route.Onboarding.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable(Route.Login.route) {
                     com.example.ui.screens.LoginScreen(
                         authViewModel = authViewModel,

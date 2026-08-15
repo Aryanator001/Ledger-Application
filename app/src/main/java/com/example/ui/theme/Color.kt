@@ -38,7 +38,26 @@ data class AppColors(
     val surfaceInverse: Color,
     val surfaceSubtle: Color,
     val swipeDeleteBg: Color,
-    val swipeArchiveBg: Color
+    val swipeArchiveBg: Color,
+
+    // Onboarding palette
+    val onboardingBlue: Color,
+    val onboardingBlueDark: Color,
+    val onboardingPurple: Color,
+    val onboardingAccentBlueText: Color,
+    val onboardingAccentPurpleText: Color,
+    val onboardingAccentBlueChip: Color,
+    val onboardingAccentPurpleChip: Color,
+    val onboardingSuccess: Color,
+    val onboardingSuccessChip: Color,
+    val onboardingDanger: Color,
+    val onboardingRing: Color,
+    val onboardingCard: Color,
+    val onboardingCardBorder: Color,
+    val onboardingTrack: Color,
+    val onboardingGhostBtn: Color,
+    val onboardingGhostBtnBorder: Color,
+    val onboardingStatTile: Color
 )
 
 val LightTokens = AppColors(
@@ -70,7 +89,25 @@ val LightTokens = AppColors(
     surfaceInverse = Color(0xFF1F2235),
     surfaceSubtle = Color(0xFFEEF1F6),
     swipeDeleteBg = Color(0xFFE03F3F).copy(alpha = 0.9f),
-    swipeArchiveBg = Color(0xFF12A67A).copy(alpha = 0.7f)
+    swipeArchiveBg = Color(0xFF12A67A).copy(alpha = 0.7f),
+
+    onboardingBlue = Color(0xFF4361EE),
+    onboardingBlueDark = Color(0xFF3D5BE0),
+    onboardingPurple = Color(0xFF8B5CF6),
+    onboardingAccentBlueText = Color(0xFF4A5FD9),
+    onboardingAccentPurpleText = Color(0xFF8248D6),
+    onboardingAccentBlueChip = Color(0xFF4361EE).copy(alpha = 0.10f),
+    onboardingAccentPurpleChip = Color(0xFF8B5CF6).copy(alpha = 0.12f),
+    onboardingSuccess = Color(0xFF1F9D63),
+    onboardingSuccessChip = Color(0xFF1F9D63).copy(alpha = 0.10f),
+    onboardingDanger = Color(0xFFE0473A),
+    onboardingRing = Color(0xFF4361EE).copy(alpha = 0.28f),
+    onboardingCard = Color(0xFFFFFFFF),
+    onboardingCardBorder = Color(0xFF15172A).copy(alpha = 0.07f),
+    onboardingTrack = Color(0xFF15172A).copy(alpha = 0.10f),
+    onboardingGhostBtn = Color(0xFF15172A).copy(alpha = 0.045f),
+    onboardingGhostBtnBorder = Color(0xFF15172A).copy(alpha = 0.10f),
+    onboardingStatTile = Color(0xFF15172A).copy(alpha = 0.035f)
 )
 
 val DarkTokens = AppColors(
@@ -102,7 +139,25 @@ val DarkTokens = AppColors(
     surfaceInverse = Color(0xFF2A2E45),
     surfaceSubtle = Color(0xFF1E2233),
     swipeDeleteBg = Color(0xFFF06464).copy(alpha = 0.9f),
-    swipeArchiveBg = Color(0xFF27C98E).copy(alpha = 0.7f)
+    swipeArchiveBg = Color(0xFF27C98E).copy(alpha = 0.7f),
+
+    onboardingBlue = Color(0xFF6B8BFF),
+    onboardingBlueDark = Color(0xFF3D5BE0),
+    onboardingPurple = Color(0xFF8B5CF6),
+    onboardingAccentBlueText = Color(0xFFA9B8FF),
+    onboardingAccentPurpleText = Color(0xFFC3A8FF),
+    onboardingAccentBlueChip = Color(0xFF5B7CFF).copy(alpha = 0.14f),
+    onboardingAccentPurpleChip = Color(0xFF8B5CF6).copy(alpha = 0.15f),
+    onboardingSuccess = Color(0xFF5EE6A8),
+    onboardingSuccessChip = Color(0xFF5EE6A8).copy(alpha = 0.14f),
+    onboardingDanger = Color(0xFFFF8A80),
+    onboardingRing = Color(0xFF5B7CFF).copy(alpha = 0.35f),
+    onboardingCard = Color(0xFFFFFFFF).copy(alpha = 0.045f),
+    onboardingCardBorder = Color(0xFFFFFFFF).copy(alpha = 0.07f),
+    onboardingTrack = Color(0xFFE8EAF3).copy(alpha = 0.15f),
+    onboardingGhostBtn = Color(0xFFFFFFFF).copy(alpha = 0.06f),
+    onboardingGhostBtnBorder = Color(0xFFFFFFFF).copy(alpha = 0.10f),
+    onboardingStatTile = Color(0xFFFFFFFF).copy(alpha = 0.04f)
 )
 
 val LocalAppColors = staticCompositionLocalOf<AppColors> {

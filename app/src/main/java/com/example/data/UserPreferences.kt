@@ -31,6 +31,7 @@ class UserPreferences(private val context: Context) {
         val ACTIVE_USER_ID = stringPreferencesKey("active_user_id")
         val ACTIVE_LEDGER_SCOPE_ID = stringPreferencesKey("active_ledger_scope_id")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
     }
 
     val activeUserId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_USER_ID] }
@@ -92,5 +93,12 @@ class UserPreferences(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[ONBOARDING_COMPLETED] = completed
         }
+    }
+
+    val hasSeenOnboarding: Flow<Boolean> = context.dataStore.data
+        .map { it[HAS_SEEN_ONBOARDING] ?: false }
+
+    suspend fun setHasSeenOnboarding(seen: Boolean) {
+        context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = seen }
     }
 }

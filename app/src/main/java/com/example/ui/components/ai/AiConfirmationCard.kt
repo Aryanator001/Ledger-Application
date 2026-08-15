@@ -107,26 +107,48 @@ fun AiConfirmationCard(
             }
 
             val directionError = errors.firstOrNull { it is ValidationError.DirectionMissing }
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                Direction.entries.forEachIndexed { index, direction ->
-                    SegmentedButton(
-                        selected = selectedDirection == direction,
-                        onClick = {
-                            selectedDirection = direction
-                            onEdit(candidate.copy(direction = direction))
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(index, Direction.entries.size)
+            val directionRows = listOf(
+                listOf(Direction.INCOME, Direction.EXPENSE, Direction.TRANSFER),
+                listOf(Direction.CREDIT, Direction.DEBIT)
+            )
+            fun directionLabel(d: Direction) = when (d) {
+                Direction.INCOME -> "Income"
+                Direction.EXPENSE -> "Expense"
+                Direction.TRANSFER -> "Transfer"
+                Direction.CREDIT -> "Credit"
+                Direction.DEBIT -> "Debit"
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                directionRows.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = when (direction) {
-                                Direction.INCOME -> "Income"
-                                Direction.EXPENSE -> "Expense"
-                                Direction.TRANSFER -> "Transfer"
-                                Direction.CREDIT -> "Credit"
-                                Direction.DEBIT -> "Debit"
-                            },
-                            fontSize = 13.sp
-                        )
+                        row.forEach { direction ->
+                            FilterChip(
+                                selected = selectedDirection == direction,
+                                onClick = {
+                                    selectedDirection = direction
+                                    onEdit(candidate.copy(direction = direction))
+                                },
+                                label = {
+                                    Text(
+                                        text = directionLabel(direction),
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        // Pad shorter rows so all chips stay 1/3 width
+                        repeat(directionRows[0].size - row.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -141,6 +163,19 @@ fun AiConfirmationCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val fieldColors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.appColors.textPrimary,
+                unfocusedTextColor = MaterialTheme.appColors.textPrimary,
+                focusedLabelColor = MaterialTheme.appColors.textSecondary,
+                unfocusedLabelColor = MaterialTheme.appColors.textSecondary,
+                focusedBorderColor = MaterialTheme.appColors.primary,
+                unfocusedBorderColor = MaterialTheme.appColors.borderLight,
+                focusedLeadingIconColor = MaterialTheme.appColors.textPrimary,
+                unfocusedLeadingIconColor = MaterialTheme.appColors.textSecondary,
+                focusedTrailingIconColor = MaterialTheme.appColors.textSecondary,
+                unfocusedTrailingIconColor = MaterialTheme.appColors.textSecondary
+            )
+
             val amountError = errors.firstOrNull { it is ValidationError.AmountMissing || it is ValidationError.AmountInvalid }
             OutlinedTextField(
                 value = amountText,
@@ -149,15 +184,12 @@ fun AiConfirmationCard(
                     onEdit(candidate.copy(amount = amountText.toDoubleOrNull()))
                 },
                 label = { Text("Amount") },
-                prefix = { Text("₹", fontWeight = FontWeight.Bold) },
+                prefix = { Text("₹", fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.textPrimary) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 isError = amountError != null,
                 supportingText = amountError?.let { { Text(it.userMessage, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.appColors.primary,
-                    unfocusedBorderColor = MaterialTheme.appColors.borderLight
-                )
+                colors = fieldColors
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -173,10 +205,7 @@ fun AiConfirmationCard(
                 isError = entityError != null,
                 supportingText = entityError?.let { { Text(it.userMessage, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.appColors.primary,
-                    unfocusedBorderColor = MaterialTheme.appColors.borderLight
-                )
+                colors = fieldColors
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -198,10 +227,7 @@ fun AiConfirmationCard(
                     isError = categoryError != null,
                     supportingText = categoryError?.let { { Text(it.userMessage, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.appColors.primary,
-                        unfocusedBorderColor = MaterialTheme.appColors.borderLight
-                    )
+                    colors = fieldColors
                 )
                 ExposedDropdownMenu(
                     expanded = categoryExpanded,
@@ -238,10 +264,7 @@ fun AiConfirmationCard(
                     isError = accountError != null,
                     supportingText = accountError?.let { { Text(it.userMessage, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.appColors.primary,
-                        unfocusedBorderColor = MaterialTheme.appColors.borderLight
-                    )
+                    colors = fieldColors
                 )
                 ExposedDropdownMenu(
                     expanded = accountExpanded,
@@ -269,10 +292,7 @@ fun AiConfirmationCard(
                 },
                 label = { Text("Notes (Optional)") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.appColors.primary,
-                    unfocusedBorderColor = MaterialTheme.appColors.borderLight
-                )
+                colors = fieldColors
             )
 
             Spacer(modifier = Modifier.height(16.dp))

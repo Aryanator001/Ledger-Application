@@ -420,4 +420,45 @@
     <string name="clarification_preset_3_months">Last 3 months</string>
     <string name="clarification_preset_this_year">This year</string>
     <string name="clarification_preset_all_time">All time</string>
+
+    <!-- Onboarding -->
+    <string name="ob_slide1_chip">VOICE-FIRST ACCOUNTING</string>
+    <string name="ob_slide1_title_part1">Meet your Voice\naccountant partner </string>
+    <string name="ob_slide1_title_brand">Khata.ai</string>
+    <string name="ob_slide1_body">Just talk, and let AI handle the books. No typing, no spreadsheets — accounting made effortless.</string>
+
+    <string name="ob_slide2_chip">STEP 1 · SPEAK</string>
+    <string name="ob_slide2_title">Just Speak. That\'s It.</string>
+    <string name="ob_slide2_bubble">&#34;Lunch 200, paid cash&#34;</string>
+    <string name="ob_slide2_categorized">Categorized as Food</string>
+
+    <string name="ob_slide3_chip">STEP 2 · ORGANIZE</string>
+    <string name="ob_slide3_title">Sorted, Before\nYou Even Ask</string>
+    <string name="ob_slide3_body">Every voice note becomes a categorized entry — organized automatically, in real time.</string>
+    <string name="ob_slide3_logged_today">Logged today</string>
+    <string name="ob_slide3_entries">3 entries</string>
+    <string name="ob_row1_name">Manager</string>
+    <string name="ob_row1_cat">General</string>
+    <string name="ob_row1_amount">+₹1,000</string>
+    <string name="ob_row2_name">Ramesh</string>
+    <string name="ob_row2_cat">General</string>
+    <string name="ob_row2_amount">+₹500</string>
+    <string name="ob_row3_name">Pizza</string>
+    <string name="ob_row3_cat">Food</string>
+    <string name="ob_row3_amount">−₹500</string>
+
+    <string name="ob_slide4_chip">STEP 3 · UNDERSTAND</string>
+    <string name="ob_slide4_title">Know Your\nBusiness, Instantly</string>
+    <string name="ob_slide4_body">Real-time insights on income, expenses, and profit — no manual reports needed.</string>
+    <string name="ob_slide4_this_month">This Month</string>
+    <string name="ob_slide4_net">+₹1,000</string>
+    <string name="ob_slide4_income_label">Income</string>
+    <string name="ob_slide4_income_value">₹1,500</string>
+    <string name="ob_slide4_expense_label">Expense</string>
+    <string name="ob_slide4_expense_value">₹500</string>
+
+    <string name="ob_btn_continue">Continue</string>
+    <string name="ob_btn_get_started">Get Started</string>
+    <string name="ob_btn_skip">Skip</string>
+    <string name="ob_free_forever">Free forever · No credit card needed</string>
 </resources>

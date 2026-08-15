@@ -1,16 +1,9 @@
 package com.example.ui.components.inputs
 
-import androidx.compose.animation.core.InfiniteRepeatableSpec
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
@@ -18,20 +11,17 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.appColors
 import androidx.compose.material3.MaterialTheme
-import com.example.ui.theme.AppShapes
 
 @Composable
 fun ChatInputBar(
@@ -57,7 +47,7 @@ fun ChatInputBar(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 8.dp, end = 4.dp)
+            modifier = Modifier.padding(start = 8.dp, end = 8.dp)
         ) {
             // Plus Button
             Box(
@@ -103,47 +93,8 @@ fun ChatInputBar(
                 )
             }
 
-            // Mic / Stop Button with pulse ring when recording
-            val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
-            val pulseScale by infiniteTransition.animateFloat(
-                initialValue = 1f, targetValue = 1.65f, label = "pulse_scale",
-                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart)
-            )
-            val pulseAlpha by infiniteTransition.animateFloat(
-                initialValue = 0.28f, targetValue = 0f, label = "pulse_alpha",
-                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart)
-            )
-
-            Box(contentAlignment = Alignment.Center) {
-                if (isListening) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .scale(pulseScale)
-                            .background(
-                                MaterialTheme.appColors.primary.copy(alpha = pulseAlpha),
-                                shape = CircleShape
-                            )
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onMicClick()
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (isListening) MaterialTheme.appColors.primary
-                                       else MaterialTheme.appColors.textSecondary
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (isListening) Icons.Default.Stop else Icons.Default.Mic,
-                        contentDescription = if (isListening) "Stop recording" else "Voice Input"
-                    )
-                }
-            }
-
-            // Send Button
+            // Right blue circle: mic when idle/listening, send when typing
+            Spacer(modifier = Modifier.width(4.dp))
             if (value.isNotEmpty() || isParsing) {
                 Box(
                     modifier = Modifier
@@ -167,6 +118,28 @@ fun ChatInputBar(
                             modifier = Modifier.size(18.dp)
                         )
                     }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isListening) MaterialTheme.appColors.expense
+                            else MaterialTheme.appColors.primary
+                        )
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onMicClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isListening) Icons.Default.Stop else Icons.Default.Mic,
+                        contentDescription = if (isListening) "Stop recording" else "Voice Input",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
