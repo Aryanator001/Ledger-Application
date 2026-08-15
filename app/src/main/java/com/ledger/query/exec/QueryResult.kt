@@ -1,5 +1,6 @@
 package com.ledger.query.exec
 
+import com.ledger.query.core.ClarificationField
 import com.ledger.query.core.Direction
 import com.ledger.query.core.Metric
 import com.ledger.query.core.QueryPlan
@@ -62,7 +63,10 @@ sealed class QueryResult {
 
     data class NeedsClarification(
         val question: String,
-        val options: List<String>
+        val options: List<String>,
+        val fieldType: ClarificationField? = null,
+        val presetAppendValues: List<String> = emptyList(),
+        val surfaceForm: String? = null
     ) : QueryResult()
 
     data class Failed(

@@ -22,13 +22,17 @@ class AiTransactionViewModelFactory(
     private val geminiApiKeyProvider: () -> String
 ) : ViewModelProvider.Factory {
 
+    // Shared list that is written by the ViewModel after its DB init and read by LiveEntityResolver.
+    // @Volatile ensures cross-thread visibility without needing synchronisation on reads.
+    @Volatile private var liveEntityNames: List<String> = emptyList()
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         val queryEngine = QueryEngineFactory.create(
             transactionDao = database.transactionDao(),
             queryPlanCacheDao = database.queryPlanCacheDao(),
             scopeIdProvider = scopeIdProvider,
             apiKeyProvider = geminiApiKeyProvider,
-            entityNamesProvider = { emptyList() }  // ViewModel refreshes from DB in init
+            entityNamesProvider = { liveEntityNames }
         )
 
         @Suppress("UNCHECKED_CAST")
@@ -40,7 +44,8 @@ class AiTransactionViewModelFactory(
             normalizer = TranscriptNormalizer(),
             resolver = CandidateResolver(),
             transactionValidator = TransactionValidator(transactionRepository),
-            queryEngine = queryEngine
+            queryEngine = queryEngine,
+            onEntityCacheReady = { names -> liveEntityNames = names }
         ) as T
     }
 }

@@ -47,7 +47,8 @@ class RoomQueryExecutor(
 
     override suspend fun execute(resolved: ResolvedQueryPlan): QueryResult {
         val plan = resolved.plan
-        val entityPrefix = resolved.entityPrefix?.lowercase()?.let { "$it%" }
+        // entityPrefix already contains the trailing '%' (added by callers via toResolved() / factory)
+        val entityPrefix = resolved.entityPrefix?.lowercase()
         val categoryDbId = resolved.categoryDbId
         val paymentMethod = resolved.paymentMethod
         val dirType = plan.direction.toSqlDir()

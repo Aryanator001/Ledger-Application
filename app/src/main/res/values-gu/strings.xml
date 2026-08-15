@@ -409,4 +409,9 @@
     <string name="profile_sign_out_title">સાઇન આઉટ કરીએ?</string>
     <string name="profile_sign_out_message">શું તમે સાઇન આઉટ કરવા માંગો છો?</string>
     <string name="profile_sign_out_confirm">સાઇન આઉટ</string>
+    <string name="clarification_preset_this_week">આ અઠવાડિયે</string>
+    <string name="clarification_preset_this_month">આ મહિને</string>
+    <string name="clarification_preset_3_months">છેલ્લા 3 મહિના</string>
+    <string name="clarification_preset_this_year">આ વર્ષ</string>
+    <string name="clarification_preset_all_time">સંપૂર્ણ સમય</string>
 </resources>

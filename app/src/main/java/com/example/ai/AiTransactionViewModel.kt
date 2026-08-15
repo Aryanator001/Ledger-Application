@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 
 import com.example.ai.extract.PartialExtractionException
+import com.example.ai.state.ClarificationPreset
 import com.example.ai.validation.TransactionValidator
 import com.ledger.query.ai.SchemaHint
 import com.ledger.query.engine.QueryEngine
@@ -34,7 +35,8 @@ class AiTransactionViewModel(
     private val normalizer: TranscriptNormalizer = TranscriptNormalizer(),
     private val resolver: CandidateResolver = CandidateResolver(),
     private val transactionValidator: TransactionValidator,
-    private val queryEngine: QueryEngine
+    private val queryEngine: QueryEngine,
+    private val onEntityCacheReady: ((List<String>) -> Unit)? = null
 ) : ViewModel() {
 
     /** In-memory entity name cache — refreshed after each commit and on init. */
@@ -48,6 +50,7 @@ class AiTransactionViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 entityNameCache = transactionRepository.getDistinctTitles()
+                onEntityCacheReady?.invoke(entityNameCache)
             } catch (e: Exception) {
                 entityNameCache = emptyList()
             }
@@ -79,10 +82,24 @@ class AiTransactionViewModel(
     }
 
     fun onPartialTranscript(partial: String) {
-        _state.value = AiState.Transcribing(partial)
+        val current = _state.value
+        if (current is AiState.ClarificationRequired && current.isListening) {
+            _state.value = current.copy(partialText = partial)
+        } else {
+            _state.value = AiState.Transcribing(partial)
+        }
     }
 
     fun onTranscriptReady(transcript: String) {
+        val current = _state.value
+        if (current is AiState.ClarificationRequired) {
+            if (transcript.isBlank()) {
+                _state.value = current.copy(isListening = false, partialText = "")
+            } else {
+                onClarificationVoiceAnswered(current, transcript)
+            }
+            return
+        }
         if (transcript.isBlank()) {
             _state.value = AiState.Failed(FailureReason.EmptyTranscript)
             return
@@ -101,80 +118,153 @@ class AiTransactionViewModel(
             }
             is AiIntent.Query -> {
                 _state.value = AiState.QueryProcessing(transcript)
-                viewModelScope.launch(Dispatchers.IO) {
-                    // Ensure entity/category cache is populated before routing
-                    cacheReady.await()
-                    try {
-                        val schema = SchemaHint(
-                            knownEntities = entityNameCache,
-                            knownCategories = knownCategoryNames,
-                            today = java.time.LocalDate.now()
-                        )
-                        when (val r = queryEngine.ask(transcript, schema)) {
-                            is NewQueryResult.Scalar -> {
-                                _state.value = AiState.QueryAnswered(QueryResponse(
-                                    headline = r.label,
-                                    totalAmount = r.amount,
-                                    transactionCount = r.txnCount,
-                                    transactionIds = r.transactionIds,
-                                    timeContext = r.timeContext,
-                                    direction = r.plan.direction.name,
-                                    query = ParsedQuery(null, null, null, null, null, transcript)
-                                ))
-                            }
-                            is NewQueryResult.Grouped -> {
-                                val headline = r.buckets.joinToString(" | ") { "${it.key}: ₹${it.amount.toLong()}" }
-                                _state.value = AiState.QueryAnswered(QueryResponse(
-                                    headline = headline.ifBlank { r.label },
-                                    totalAmount = r.buckets.sumOf { it.amount },
-                                    transactionCount = r.buckets.sumOf { it.count },
-                                    transactionIds = r.transactionIds,
-                                    timeContext = r.timeContext,
-                                    direction = r.plan.direction.name,
-                                    query = ParsedQuery(null, null, null, null, null, transcript)
-                                ))
-                            }
-                            is NewQueryResult.Analysis -> {
-                                _state.value = AiState.QueryAnswered(QueryResponse(
-                                    headline = r.narrative,
-                                    totalAmount = 0.0,
-                                    transactionCount = 0,
-                                    transactionIds = emptyList(),
-                                    query = ParsedQuery(null, null, null, null, null, transcript)
-                                ))
-                            }
-                            is NewQueryResult.NeedsClarification -> {
-                                val headline = "${r.question}: ${r.options.take(4).joinToString(" / ")}"
-                                _state.value = AiState.QueryAnswered(QueryResponse(
-                                    headline = headline,
-                                    totalAmount = 0.0,
-                                    transactionCount = 0,
-                                    transactionIds = emptyList(),
-                                    query = ParsedQuery(null, null, null, null, null, transcript)
-                                ))
-                            }
-                            is NewQueryResult.Failed -> {
-                                _state.value = AiState.Failed(
-                                    FailureReason.QueryEngineError(r.reason), transcript
-                                )
-                            }
-                            else -> _state.value = AiState.Failed(
-                                FailureReason.QueryEngineError("Unexpected result type"), transcript
-                            )
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        _state.value = AiState.Failed(
-                            FailureReason.QueryEngineError(e.javaClass.simpleName + ": " + e.message),
-                            transcript
-                        )
-                    }
-                }
+                viewModelScope.launch(Dispatchers.IO) { routeAsQuery(transcript) }
             }
             is AiIntent.Unknown -> {
                 _state.value = AiState.Failed(FailureReason.IntentUnclear, transcript)
             }
         }
+    }
+
+    private suspend fun routeAsQuery(
+        transcript: String,
+        allowClarification: Boolean = true,
+        skipEntityClarification: Boolean = false
+    ) {
+        cacheReady.await()
+        try {
+            val schema = SchemaHint(
+                knownEntities = entityNameCache,
+                knownCategories = knownCategoryNames,
+                today = java.time.LocalDate.now()
+            )
+            when (val r = queryEngine.ask(transcript, schema)) {
+                is NewQueryResult.Scalar -> {
+                    _state.value = AiState.QueryAnswered(QueryResponse(
+                        headline = r.label,
+                        totalAmount = r.amount,
+                        transactionCount = r.txnCount,
+                        transactionIds = r.transactionIds,
+                        timeContext = r.timeContext,
+                        direction = r.plan.direction.name,
+                        query = ParsedQuery(null, null, null, null, null, transcript)
+                    ))
+                }
+                is NewQueryResult.Grouped -> {
+                    val headline = r.buckets.joinToString(" | ") { "${it.key}: ₹${it.amount.toLong()}" }
+                    _state.value = AiState.QueryAnswered(QueryResponse(
+                        headline = headline.ifBlank { r.label },
+                        totalAmount = r.buckets.sumOf { it.amount },
+                        transactionCount = r.buckets.sumOf { it.count },
+                        transactionIds = r.transactionIds,
+                        timeContext = r.timeContext,
+                        direction = r.plan.direction.name,
+                        query = ParsedQuery(null, null, null, null, null, transcript)
+                    ))
+                }
+                is NewQueryResult.Analysis -> {
+                    _state.value = AiState.QueryAnswered(QueryResponse(
+                        headline = r.narrative,
+                        totalAmount = 0.0,
+                        transactionCount = 0,
+                        transactionIds = emptyList(),
+                        query = ParsedQuery(null, null, null, null, null, transcript)
+                    ))
+                }
+                is NewQueryResult.NeedsClarification -> {
+                    val fieldType = r.fieldType
+                    val isEntityAndBlocked = fieldType == com.ledger.query.core.ClarificationField.ENTITY && skipEntityClarification
+                    val canShowCard = allowClarification && fieldType != null && !isEntityAndBlocked
+                    if (canShowCard) {
+                        val presets = r.presetAppendValues.map { ClarificationPreset(label = it, appendValue = it) }
+                        _state.value = AiState.ClarificationRequired(
+                            originalTranscript = transcript,
+                            question = r.question,
+                            fieldType = fieldType!!,
+                            presets = presets,
+                            ambiguousSurfaceForm = r.surfaceForm ?: ""
+                        )
+                    } else {
+                        val headline = "${r.question}: ${r.options.take(4).joinToString(" / ")}"
+                        _state.value = AiState.QueryAnswered(QueryResponse(
+                            headline = headline,
+                            totalAmount = 0.0,
+                            transactionCount = 0,
+                            transactionIds = emptyList(),
+                            query = ParsedQuery(null, null, null, null, null, transcript)
+                        ))
+                    }
+                }
+                is NewQueryResult.Failed -> {
+                    _state.value = AiState.Failed(FailureReason.QueryEngineError(r.reason), transcript)
+                }
+                else -> _state.value = AiState.Failed(
+                    FailureReason.QueryEngineError("Unexpected result type"), transcript
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _state.value = AiState.Failed(
+                FailureReason.QueryEngineError(e.javaClass.simpleName + ": " + e.message),
+                transcript
+            )
+        }
+    }
+
+    fun onClarificationMicPressed() {
+        val current = _state.value as? AiState.ClarificationRequired ?: return
+        _state.value = current.copy(isListening = true, partialText = "")
+    }
+
+    fun onClarificationOptionSelected(original: AiState.ClarificationRequired, preset: ClarificationPreset) {
+        when (original.fieldType) {
+            com.ledger.query.core.ClarificationField.TIME_RANGE -> {
+                val combined = "${original.originalTranscript} ${preset.appendValue}"
+                _state.value = AiState.QueryProcessing(combined)
+                viewModelScope.launch(Dispatchers.IO) { routeAsQuery(combined, allowClarification = false) }
+            }
+            com.ledger.query.core.ClarificationField.ENTITY -> {
+                val revised = if (original.ambiguousSurfaceForm.isNotBlank()) {
+                    original.originalTranscript.replace(
+                        original.ambiguousSurfaceForm, preset.appendValue, ignoreCase = true
+                    )
+                } else {
+                    "${original.originalTranscript} ${preset.appendValue}"
+                }
+                _state.value = AiState.QueryProcessing(revised)
+                // allowClarification=true so TIME_RANGE can fire next; skip ENTITY to prevent loop
+                viewModelScope.launch(Dispatchers.IO) {
+                    routeAsQuery(revised, allowClarification = true, skipEntityClarification = true)
+                }
+            }
+        }
+    }
+
+    private fun onClarificationVoiceAnswered(original: AiState.ClarificationRequired, answer: String) {
+        when (original.fieldType) {
+            com.ledger.query.core.ClarificationField.TIME_RANGE -> {
+                val combined = "${original.originalTranscript} $answer"
+                _state.value = AiState.QueryProcessing(combined)
+                viewModelScope.launch(Dispatchers.IO) { routeAsQuery(combined, allowClarification = false) }
+            }
+            com.ledger.query.core.ClarificationField.ENTITY -> {
+                val revised = if (original.ambiguousSurfaceForm.isNotBlank()) {
+                    original.originalTranscript.replace(
+                        original.ambiguousSurfaceForm, answer.trim(), ignoreCase = true
+                    )
+                } else {
+                    "${original.originalTranscript} ${answer.trim()}"
+                }
+                _state.value = AiState.QueryProcessing(revised)
+                viewModelScope.launch(Dispatchers.IO) {
+                    routeAsQuery(revised, allowClarification = true, skipEntityClarification = true)
+                }
+            }
+        }
+    }
+
+    fun onClarificationDismissed() {
+        _state.value = AiState.Idle
     }
 
     private fun extractTransaction(transcript: String) {
@@ -313,6 +403,7 @@ class AiTransactionViewModel(
             // Refresh entity cache so newly added names are queryable immediately
             try {
                 entityNameCache = transactionRepository.getDistinctTitles()
+                onEntityCacheReady?.invoke(entityNameCache)
             } catch (e: Exception) { /* keep existing cache */ }
             delay(1500L)
             if (_state.value is AiState.Committed) {

@@ -143,6 +143,9 @@ object Lexicon {
         "the", "a", "an", "is", "was", "are", "were", "be", "do", "did", "does",
         "have", "has", "of", "in", "on", "at", "by", "and", "or", "so", "then",
         "it", "this", "that", "what", "whats", "tell", "please", "just",
+        // "bill"/"bills" are compound-noun suffixes ("electricity bill", "coffee bill") —
+        // the meaningful concept is always the preceding noun; "bill" adds no routing signal.
+        "bill", "bills",
         // Hindi function words (romanized)
         "hai", "hain", "tha", "thi", "ho", "hua", "hui", "huyi", "hue",
         "yeh", "ye", "vo", "woh", "bhai", "ji", "toh", "bhi", "hi",

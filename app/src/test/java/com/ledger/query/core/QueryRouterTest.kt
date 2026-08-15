@@ -41,10 +41,11 @@ class QueryRouterTest {
         assertTrue("expected ≥2 options, got $opts", opts.size >= 2)
     }
 
-    // Row 3: Hindi expense + entity postposition
-    @Test fun hi_rameshKoKitnaDiya_local() {
+    // Row 3: Hindi expense + entity postposition — no time → CLARIFY TIME_RANGE
+    @Test fun hi_rameshKoKitnaDiya_clarifyTime() {
         val d = router.route("ramesh ko kitna diya")
-        assertEquals(Tier.LOCAL, d.tier)
+        assertEquals(Tier.CLARIFY, d.tier)
+        assertEquals(ClarificationField.TIME_RANGE, d.fieldType)
         assertEquals(Direction.OUT, d.frame.direction)
         assertEntityResolved(d.frame, "Ramesh", 3L)
     }
@@ -78,10 +79,11 @@ class QueryRouterTest {
         assertTrue(d.frame.timeWasExplicit)
     }
 
-    // Row 8: Entity + income direction
-    @Test fun en_receivedFromRamesh_local() {
+    // Row 8: Entity + income direction — no time → CLARIFY TIME_RANGE
+    @Test fun en_receivedFromRamesh_clarifyTime() {
         val d = router.route("received from ramesh")
-        assertEquals(Tier.LOCAL, d.tier)
+        assertEquals(Tier.CLARIFY, d.tier)
+        assertEquals(ClarificationField.TIME_RANGE, d.fieldType)
         assertEquals(Direction.IN, d.frame.direction)
         assertEntityResolved(d.frame, "Ramesh", 3L)
     }
@@ -99,17 +101,19 @@ class QueryRouterTest {
         assertEquals(Tier.AI_ANALYST, d.tier)
     }
 
-    // Row 11: "how many times" → COUNT metric
+    // Row 11: "how many times" + entity but no time → CLARIFY TIME_RANGE; frame still has COUNT
     @Test fun en_howManyTimes_count() {
         val d = router.route("how many times did I pay Ramesh")
-        assertEquals(Tier.LOCAL, d.tier)
+        assertEquals(Tier.CLARIFY, d.tier)
+        assertEquals(ClarificationField.TIME_RANGE, d.fieldType)
         assertEquals(Metric.COUNT, d.frame.metric)
     }
 
-    // Row 12: "how much" → SUM metric
+    // Row 12: "how much" + entity but no time → CLARIFY TIME_RANGE; frame still has SUM
     @Test fun en_howMuch_sum() {
         val d = router.route("how much did I pay to Ramesh")
-        assertEquals(Tier.LOCAL, d.tier)
+        assertEquals(Tier.CLARIFY, d.tier)
+        assertEquals(ClarificationField.TIME_RANGE, d.fieldType)
         assertEquals(Metric.SUM, d.frame.metric)
         assertEntityResolved(d.frame, "Ramesh", 3L)
     }

@@ -38,6 +38,7 @@ import com.example.ai.model.Direction
 import com.example.ai.model.ConfidenceScore
 import com.example.ai.model.ConfidenceTier
 import com.example.ui.components.ai.AiConfirmationCard
+import com.example.ui.components.ai.ClarificationCard
 
 @Composable
 fun HomeDashboard(
@@ -49,7 +50,7 @@ fun HomeDashboard(
     onNavigateToTransactions: () -> Unit,
     onNavigateToAccounts: () -> Unit
 ) {
-    val netWorth by viewModel.netWorth.collectAsStateWithLifecycle()
+    val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()
     val monthlyIncome by viewModel.monthlyIncome.collectAsStateWithLifecycle()
     val monthlyExpense by viewModel.monthlyExpense.collectAsStateWithLifecycle()
     val allTransactionsWithCategory by viewModel.allTransactionsWithCategory.collectAsStateWithLifecycle()
@@ -66,7 +67,7 @@ fun HomeDashboard(
                 .padding(16.dp)
         ) {
             SummaryCard(
-                totalBalance = netWorth / 100.0,
+                totalBalance = totalBalance,
                 totalIncome = monthlyIncome / 100.0,
                 totalExpense = monthlyExpense / 100.0,
                 currencySymbol = currencySymbol,
@@ -178,6 +179,16 @@ fun HomeDashboard(
             }
         }
 
+        // Auto-start mic when a clarification card appears
+        LaunchedEffect(aiState is AiState.ClarificationRequired) {
+            val current = aiState
+            if (current is AiState.ClarificationRequired && !current.isListening) {
+                kotlinx.coroutines.delay(350)
+                aiViewModel.onClarificationMicPressed()
+                sttProvider.start(sttCallbacks)
+            }
+        }
+
         fun startListening() {
             if (!permissionState.isGranted()) {
                 permissionState.request { granted ->
@@ -257,6 +268,28 @@ fun HomeDashboard(
                 .padding(bottom = 16.dp)
         ) {
             when (val state = aiState) {
+                is AiState.ClarificationRequired -> {
+                    val presetLabels = when (state.fieldType) {
+                        com.ledger.query.core.ClarificationField.TIME_RANGE -> listOf(
+                            stringResource(R.string.clarification_preset_this_week),
+                            stringResource(R.string.clarification_preset_this_month),
+                            stringResource(R.string.clarification_preset_3_months),
+                            stringResource(R.string.clarification_preset_this_year),
+                            stringResource(R.string.clarification_preset_all_time)
+                        )
+                        com.ledger.query.core.ClarificationField.ENTITY ->
+                            state.presets.map { it.label }
+                    }
+                    ClarificationCard(
+                        state = state,
+                        presetLabels = presetLabels,
+                        onOptionSelected = { aiViewModel.onClarificationOptionSelected(state, it) },
+                        onDismiss = {
+                            sttProvider.cancel()
+                            aiViewModel.onClarificationDismissed()
+                        }
+                    )
+                }
                 is AiState.ConfirmationRequired -> {
                     AiConfirmationCard(
                         candidate = state.candidate,
@@ -339,6 +372,10 @@ fun HomeDashboard(
                 },
                 onMicClick = {
                     when (aiState) {
+                        is AiState.ClarificationRequired -> {
+                            sttProvider.cancel()
+                            aiViewModel.onClarificationDismissed()
+                        }
                         is AiState.Listening, is AiState.Transcribing -> stopListening()
                         is AiState.TranscriptReady -> {
                             // Blank = Sarvam upload still in progress. Route to dismissAi() so

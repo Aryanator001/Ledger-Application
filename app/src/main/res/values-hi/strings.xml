@@ -409,4 +409,9 @@
     <string name="profile_sign_out_title">साइन आउट करें?</string>
     <string name="profile_sign_out_message">क्या आप साइन आउट करना चाहते हैं?</string>
     <string name="profile_sign_out_confirm">साइन आउट</string>
+    <string name="clarification_preset_this_week">इस हफ्ते</string>
+    <string name="clarification_preset_this_month">इस महीने</string>
+    <string name="clarification_preset_3_months">पिछले 3 महीने</string>
+    <string name="clarification_preset_this_year">इस साल</string>
+    <string name="clarification_preset_all_time">सभी समय</string>
 </resources>

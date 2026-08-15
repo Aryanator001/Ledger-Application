@@ -39,20 +39,31 @@ class LiveEntityResolver(
         val lower = surfaceForm.lowercase().trim()
         val names = namesProvider()
 
-        // Exact and prefix matches
-        val exactMatches = names.filter { name ->
-            val nl = name.lowercase()
-            nl == lower || nl.split(" ").any { part -> part == lower }
+        // Tier 1: Full-name exact match — "ramesh" → "Ramesh", NOT "Ramesh Painter"
+        // This prevents false ambiguity between "Ramesh" and "Ramesh Painter".
+        val fullNameMatches = names.filter { it.lowercase() == lower }
+        if (fullNameMatches.size == 1) {
+            val idx = names.indexOfFirst { it.equals(fullNameMatches[0], ignoreCase = true) }
+            return EntityRef(surfaceForm, idx.toLong() + 1L, fullNameMatches[0], 1.0f)
         }
-        if (exactMatches.size == 1) {
-            val idx = names.indexOfFirst { it.equals(exactMatches[0], ignoreCase = true) }
-            return EntityRef(surfaceForm, idx.toLong() + 1L, exactMatches[0], 1.0f)
-        }
-        if (exactMatches.size > 1) {
-            return EntityRef(surfaceForm, null, null, 0.5f, ambiguousWith = exactMatches)
+        if (fullNameMatches.size > 1) {
+            return EntityRef(surfaceForm, null, null, 0.5f, ambiguousWith = fullNameMatches)
         }
 
-        // Prefix / substring fallback
+        // Tier 2: Word-level exact match — only reached when Tier 1 found nothing.
+        // "vijay" → matches "Vijay Kumar" and "Vijay Shah" (both have "vijay" as a word) → genuinely ambiguous.
+        val wordMatches = names.filter { name ->
+            name.lowercase().split(" ").any { part -> part == lower }
+        }
+        if (wordMatches.size == 1) {
+            val idx = names.indexOfFirst { it.equals(wordMatches[0], ignoreCase = true) }
+            return EntityRef(surfaceForm, idx.toLong() + 1L, wordMatches[0], 0.95f)
+        }
+        if (wordMatches.size > 1) {
+            return EntityRef(surfaceForm, null, null, 0.5f, ambiguousWith = wordMatches)
+        }
+
+        // Tier 3: Fuzzy — prefix / substring fallback
         val fuzzyMatches = names.filter { name ->
             val nl = name.lowercase()
             nl.split(" ").any { part -> part.startsWith(lower) } ||
@@ -60,7 +71,7 @@ class LiveEntityResolver(
         }
 
         return when (fuzzyMatches.size) {
-            0 -> EntityRef(surfaceForm, null, null, 0.3f)  // attempted, not found — Rule 0 triggers CLARIFY
+            0 -> EntityRef(surfaceForm, null, null, 0.3f)  // not found — Rule 0 triggers CLARIFY
             1 -> {
                 val idx = names.indexOfFirst { it.equals(fuzzyMatches[0], ignoreCase = true) }
                 EntityRef(surfaceForm, idx.toLong() + 1L, fuzzyMatches[0], 0.9f)

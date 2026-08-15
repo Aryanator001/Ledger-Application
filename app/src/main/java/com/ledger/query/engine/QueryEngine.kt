@@ -4,7 +4,9 @@ import com.ledger.query.ai.AiAnalyst
 import com.ledger.query.exec.LedgerLog
 import com.ledger.query.ai.AiPlanner
 import com.ledger.query.ai.SchemaHint
+import com.ledger.query.core.ClarificationField
 import com.ledger.query.core.Direction
+import com.ledger.query.core.Lang
 import com.ledger.query.core.QueryFrame
 import com.ledger.query.core.QueryRouter
 import com.ledger.query.core.Tier
@@ -59,13 +61,36 @@ class QueryEngine(
 
             // ── CLARIFY — ask user to disambiguate ────────────────────────────
             Tier.CLARIFY -> {
-                val entity = frame.entity?.surfaceForm ?: "entity"
-                val langQ = when (frame.language.name) {
-                    "HI" -> "Kaun se $entity?"
-                    "GU" -> "Kya $entity?"
-                    else -> "Which $entity?"
+                when (decision.fieldType) {
+                    ClarificationField.TIME_RANGE -> {
+                        val q = when (frame.language) {
+                            Lang.HI -> "Kaunse time period ke liye?"
+                            Lang.GU -> "Kya samay galo?"
+                            else    -> "What time period?"
+                        }
+                        QueryResult.NeedsClarification(
+                            question = q,
+                            options = emptyList(),
+                            fieldType = ClarificationField.TIME_RANGE,
+                            presetAppendValues = listOf("this week", "this month", "last 3 months", "this year", "all time")
+                        )
+                    }
+                    ClarificationField.ENTITY, null -> {
+                        val entity = frame.entity?.surfaceForm ?: "entity"
+                        val langQ = when (frame.language) {
+                            Lang.HI -> "Kaun se $entity?"
+                            Lang.GU -> "Kya $entity?"
+                            else    -> "Which $entity?"
+                        }
+                        QueryResult.NeedsClarification(
+                            question = langQ,
+                            options = decision.clarifyOptions,
+                            fieldType = ClarificationField.ENTITY,
+                            presetAppendValues = decision.clarifyOptions,
+                            surfaceForm = frame.entity?.surfaceForm
+                        )
+                    }
                 }
-                QueryResult.NeedsClarification(langQ, decision.clarifyOptions)
             }
 
             // ── Tier B: AI_PLANNER — check cache first, then Gemini ──────────

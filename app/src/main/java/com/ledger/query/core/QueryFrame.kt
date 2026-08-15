@@ -77,5 +77,6 @@ data class RouteDecision(
     val confidence: Float,
     val reason: String,
     val frame: QueryFrame,
-    val clarifyOptions: List<String> = emptyList()
+    val clarifyOptions: List<String> = emptyList(),
+    val fieldType: ClarificationField? = null
 )

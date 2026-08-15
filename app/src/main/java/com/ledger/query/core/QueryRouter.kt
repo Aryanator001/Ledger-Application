@@ -25,9 +25,8 @@ class QueryRouter(
 
     fun route(rawQuery: String): RouteDecision {
         val frame = buildFrame(rawQuery)
-
-        val (tier, confidence, reason, options) = decide(frame)
-        return RouteDecision(tier, confidence, reason, frame, options)
+        val decision = decide(frame)
+        return RouteDecision(decision.tier, decision.confidence, decision.reason, frame, decision.options, decision.fieldType)
     }
 
     fun toPlan(frame: QueryFrame): QueryPlan {
@@ -64,7 +63,8 @@ class QueryRouter(
         val tier: Tier,
         val confidence: Float,
         val reason: String,
-        val options: List<String> = emptyList()
+        val options: List<String> = emptyList(),
+        val fieldType: ClarificationField? = null
     )
 
     private fun decide(frame: QueryFrame): Decision {
@@ -91,6 +91,20 @@ class QueryRouter(
                 Tier.CLARIFY, 1.0f,
                 "entity '${frame.entity.surfaceForm}' is ambiguous",
                 frame.entity.ambiguousWith
+            )
+        }
+
+        // Rule 2.5: resolved entity/category with a clear direction/metric intent but no explicit time
+        // Requires at least one of: direction signal or metric signal — prevents firing on bare entity names
+        // like "suresh patel" which are too underspecified to ask a time question about
+        if (!frame.timeWasExplicit &&
+            (frame.entity?.isResolved == true || frame.category?.isResolved == true) &&
+            (frame.direction != Direction.UNSPECIFIED || frame.hasMetricSignal)) {
+            return Decision(
+                Tier.CLARIFY, 1.0f,
+                "time range not explicit for specific entity/category query",
+                emptyList(),
+                ClarificationField.TIME_RANGE
             )
         }
 

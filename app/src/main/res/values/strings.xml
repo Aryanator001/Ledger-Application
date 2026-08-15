@@ -415,4 +415,9 @@
     <string name="profile_sign_out_title">Sign Out?</string>
     <string name="profile_sign_out_message">Are you sure you want to sign out?</string>
     <string name="profile_sign_out_confirm">Sign Out</string>
+    <string name="clarification_preset_this_week">This week</string>
+    <string name="clarification_preset_this_month">This month</string>
+    <string name="clarification_preset_3_months">Last 3 months</string>
+    <string name="clarification_preset_this_year">This year</string>
+    <string name="clarification_preset_all_time">All time</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.ai.state
 
 import com.example.ai.model.*
+import com.ledger.query.core.ClarificationField
 
 sealed class AiState {
     object Idle : AiState()
@@ -25,11 +26,26 @@ sealed class AiState {
         val prefillType: String?,
         val rawTranscript: String
     ) : AiState()
+    data class ClarificationRequired(
+        val originalTranscript: String,
+        val question: String,
+        val fieldType: ClarificationField,
+        val presets: List<ClarificationPreset>,
+        val isListening: Boolean = false,
+        val partialText: String = "",
+        val ambiguousSurfaceForm: String = ""
+    ) : AiState()
 }
+
+data class ClarificationPreset(
+    val label: String,
+    val appendValue: String
+)
 
 val AiState.isInteractive: Boolean
     get() = this is AiState.ConfirmationRequired || this is AiState.Failed ||
-            this is AiState.QueryAnswered || this is AiState.ManualFallback
+            this is AiState.QueryAnswered || this is AiState.ManualFallback ||
+            this is AiState.ClarificationRequired
 
 val AiState.isBusy: Boolean
     get() = this is AiState.Listening || this is AiState.Transcribing ||
