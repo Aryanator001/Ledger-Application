@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.AuthRepository
+import com.example.data.AuthResult
 import com.example.data.UserSession
 import com.example.data.SecurityStore
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -17,6 +19,9 @@ class AuthViewModel(
 
     val activeSession: StateFlow<UserSession?> = authRepository.activeSession
 
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError
+
     init {
         val cachedSession = securityStore.getCachedSession()
         if (cachedSession != null) {
@@ -25,10 +30,20 @@ class AuthViewModel(
     }
 
     fun signInWithGoogle(context: Context, serverClientId: String, onResult: (Boolean) -> Unit) {
+        _authError.value = null
         viewModelScope.launch {
-            val session = authRepository.signInWithGoogle(context, serverClientId)
-            onResult(session != null)
+            when (val result = authRepository.signInWithGoogle(context, serverClientId)) {
+                is AuthResult.Success -> onResult(true)
+                is AuthResult.Error -> {
+                    _authError.value = result.message
+                    onResult(false)
+                }
+            }
         }
+    }
+
+    fun clearAuthError() {
+        _authError.value = null
     }
 
     fun signInWithMockDevUser(onResult: (Boolean) -> Unit) {

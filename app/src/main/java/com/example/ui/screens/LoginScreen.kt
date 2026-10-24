@@ -23,6 +23,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -49,6 +52,8 @@ fun LoginScreen(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
     val appColors = MaterialTheme.appColors
+    val authError by authViewModel.authError.collectAsState()
+    val webClientId = stringResource(R.string.default_web_client_id)
 
     // One-shot entrance animations — three staggered fade groups
     var startAnim by remember { mutableStateOf(false) }
@@ -139,7 +144,7 @@ fun LoginScreen(
                             isLoading = true
                             authViewModel.signInWithGoogle(
                                 context,
-                                "105189955946-lq8pdb7aq5fdm2u0flbf72vbg4eaqc41.apps.googleusercontent.com"
+                                webClientId
                             ) { success ->
                                 isLoading = false
                                 if (success) onLoginSuccess()
@@ -176,6 +181,7 @@ fun LoginScreen(
                         onClick = {
                             if (!isLoading) {
                                 isLoading = true
+                                authViewModel.clearAuthError()
                                 authViewModel.signInWithMockDevUser { success ->
                                     isLoading = false
                                     if (success) onLoginSuccess()
@@ -184,6 +190,16 @@ fun LoginScreen(
                         },
                         isLoading = isLoading,
                         enabled = !isLoading
+                    )
+                }
+
+                if (authError != null) {
+                    Text(
+                        text = authError.orEmpty(),
+                        style = AppTypography.bodySmall,
+                        color = appColors.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = AppSpacing.xs)
                     )
                 }
             }
