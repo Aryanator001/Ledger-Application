@@ -11,8 +11,12 @@ import com.example.ai.state.FailureReason
  * for that same session. The caller's callbacks see a fresh onListeningStarted()
  * when the fallback kicks in, so the UI reacts normally.
  *
- * All other errors (EmptyTranscript, permission denied, etc.) are passed through
- * immediately without triggering the fallback.
+ * EmptyTranscript also triggers the fallback: Sarvam can return HTTP 200 with a
+ * blank transcript (e.g. noise-only audio past its VAD threshold, or a short/odd
+ * utterance its model can't transcribe) even though the mic genuinely captured
+ * speech, so it's worth a second attempt via the on-device recognizer rather than
+ * surfacing "No voice heard" immediately. Permission errors are still passed
+ * through immediately without triggering the fallback.
  */
 class DualSttProvider(context: Context) : SttProvider {
 
@@ -65,7 +69,7 @@ class DualSttProvider(context: Context) : SttProvider {
         }
 
         override fun onError(reason: FailureReason) {
-            // Only fall back on network/API failures — not on empty transcript or permissions.
+            // Fall back on network/API failures and empty transcripts — not on permissions.
             if (phase == Phase.SARVAM && reason.isFallbackCandidate()) {
                 phase = Phase.FALLBACK
                 androidProvider.start(fallbackCallbacks(caller))
@@ -98,5 +102,6 @@ class DualSttProvider(context: Context) : SttProvider {
     private fun FailureReason.isFallbackCandidate(): Boolean =
         this is FailureReason.NetworkError ||
         this == FailureReason.SttFailed ||
+        this == FailureReason.EmptyTranscript ||
         this is FailureReason.Unknown
 }
