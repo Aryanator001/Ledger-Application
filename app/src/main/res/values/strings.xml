@@ -7,6 +7,17 @@
     <string name="dashboard_auto_saved" formatted="false">Auto-saved ✓ %s ₹%d</string>
     <string name="dashboard_mic_permission">Microphone permission required for voice input</string>
     <string name="dashboard_transaction_saved">Transaction saved ✓</string>
+    <string name="quick_add_tile_label">Quick Add</string>
+    <string name="quick_add_shortcut_short_label">Quick Add</string>
+    <string name="quick_add_shortcut_long_label">Quick Add Transaction</string>
+    <string name="quick_add_pill_placeholder">Spent ₹150 for lunch…</string>
+    <string name="quick_add_overlay_permission_rationale">Allow Khata.ai to appear over other apps to use Quick Add</string>
+    <string name="quick_add_settings_section">Quick Add</string>
+    <string name="quick_add_settings_permission_label">Display over other apps</string>
+    <string name="quick_add_settings_permission_granted">Granted</string>
+    <string name="quick_add_settings_permission_not_granted">Not granted — tap to allow</string>
+    <string name="quick_add_settings_try_label">Try Quick Add now</string>
+    <string name="quick_add_assistant_role_label">Set as device Assistant</string>
     <string name="dashboard_include_amount">Include an amount (e.g., \'500\')</string>
     <string name="chat_input_placeholder_alt">Add expense \'Lunch 200\'...</string>
     <string name="ai_thinking">Thinking...</string>

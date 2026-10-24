@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_add_pill"
+        android:enabled="true"
+        android:icon="@drawable/ic_quick_add"
+        android:shortcutShortLabel="@string/quick_add_shortcut_short_label"
+        android:shortcutLongLabel="@string/quick_add_shortcut_long_label">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.ledger.qzwxcd"
+            android:targetClass="com.example.ai.overlay.QuickAddShortcutLauncherActivity" />
+    </shortcut>
+</shortcuts>

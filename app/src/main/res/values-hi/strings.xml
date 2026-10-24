@@ -6,6 +6,17 @@
     <string name="dashboard_auto_saved" formatted="false">ऑटो-सेव हो गया ✓ %s ₹%d</string>
     <string name="dashboard_mic_permission">वॉइस इनपुट के लिए माइक्रोफ़ोन की अनुमति आवश्यक है</string>
     <string name="dashboard_transaction_saved">ट्रांज़ैक्शन सेव हो गया ✓</string>
+    <string name="quick_add_tile_label">क्विक ऐड</string>
+    <string name="quick_add_shortcut_short_label">क्विक ऐड</string>
+    <string name="quick_add_shortcut_long_label">क्विक ऐड ट्रांज़ैक्शन</string>
+    <string name="quick_add_pill_placeholder">लंच पर ₹150 खर्च हुए…</string>
+    <string name="quick_add_overlay_permission_rationale">Quick Add इस्तेमाल करने के लिए Khata.ai को दूसरे ऐप्स के ऊपर दिखने की अनुमति दें</string>
+    <string name="quick_add_settings_section">क्विक ऐड</string>
+    <string name="quick_add_settings_permission_label">दूसरे ऐप्स के ऊपर दिखाएँ</string>
+    <string name="quick_add_settings_permission_granted">अनुमति दी गई</string>
+    <string name="quick_add_settings_permission_not_granted">अनुमति नहीं दी गई — अनुमति देने के लिए टैप करें</string>
+    <string name="quick_add_settings_try_label">अभी क्विक ऐड आज़माएँ</string>
+    <string name="quick_add_assistant_role_label">डिवाइस असिस्टेंट के रूप में सेट करें</string>
     <string name="dashboard_include_amount">एक अमाउंट शामिल करें (जैसे, \'500\')</string>
     <string name="chat_input_placeholder_alt">खर्च जोड़ें \'लंच 200\'...</string>
     <string name="ai_thinking">सोच रहा हूँ...</string>
