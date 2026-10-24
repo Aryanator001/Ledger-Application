@@ -13,13 +13,15 @@ class LedgerSessionManager(private val database: AppDatabase, private val prefer
         val previousScope = preferences.activeLedgerScopeId.first()
             .takeIf { preferences.activeUserId.first() == userId }
         // Clear before any database work; failures must not leave another ledger selected.
-        preferences.setActiveLedger(null, null)
+        preferences.setActiveUserId(null)
+        preferences.setActiveLedgerScopeId(null)
         val scopeId = database.withTransaction {
             val profile = database.userProfileDao().getUserProfile(userId)
             if (profile == null || profile.isDeleted) return@withTransaction null
             val scopes = database.ledgerScopeDao()
-            val scope = previousScope?.let { scopes.getScopeForProfile(it, userId) }
-                ?: scopes.getScopesForProfile(userId).first().firstOrNull()
+            val profileScopes = scopes.getScopesForProfile(userId).first()
+            val scope = previousScope?.let { prev -> profileScopes.firstOrNull { it.id == prev } }
+                ?: profileScopes.firstOrNull()
                 ?: return@withTransaction null
             DatabaseStitcher(database).stitchUnassignedData(userId, scope.id)
             DefaultAccounts.ensure(database.accountDao(), scope.id)
@@ -28,9 +30,14 @@ class LedgerSessionManager(private val database: AppDatabase, private val prefer
         val defaultAccount = if (scopeId != null && scopeId == previousScope && previousDefault != null) {
             DefaultAccounts.resolve(database.accountDao(), previousDefault, scopeId)?.id
         } else null
-        preferences.setActiveLedger(userId, scopeId, defaultAccount)
+        preferences.setActiveUserId(userId)
+        preferences.setActiveLedgerScopeId(scopeId)
+        if (defaultAccount != null) preferences.setDefaultAccountId(defaultAccount)
         scopeId
     }
 
-    suspend fun clear() = mutex.withLock { preferences.setActiveLedger(null, null) }
+    suspend fun clear() = mutex.withLock {
+        preferences.setActiveUserId(null)
+        preferences.setActiveLedgerScopeId(null)
+    }
 }

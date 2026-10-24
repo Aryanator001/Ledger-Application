@@ -14,7 +14,7 @@ object DefaultAccounts {
         require(scopeId.isNotBlank())
         defaults.forEach { account ->
             if (dao.getAccountById(account.id, scopeId) == null) {
-                dao.insertDefaultAccount(account.copy(id = scopedId(account.id, scopeId), ledgerScopeId = scopeId))
+                dao.insertAccount(account.copy(id = scopedId(account.id, scopeId), ledgerScopeId = scopeId))
             }
         }
     }
