@@ -1,27 +1,52 @@
 package com.example.ui.components.inputs
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.ui.components.pill.PillCircleButton
+import com.example.ui.components.pill.PillWaveform
+import com.example.ui.components.pill.PremiumPillShell
+import com.example.ui.components.pill.RecLightIndicator
+import com.example.ui.theme.AppTypography
 import com.example.ui.theme.appColors
-import androidx.compose.material3.MaterialTheme
+
+/**
+ * Status the pill reflects in its middle content/trailing button, replacing the old
+ * separate AiTranscriptCard popup — listening/transcribing/processing/failed all render
+ * inline in the pill now that it's large enough to carry them.
+ */
+sealed class ChatInputBarStatus {
+    object Idle : ChatInputBarStatus()
+    object Listening : ChatInputBarStatus()
+    data class Transcribing(val text: String) : ChatInputBarStatus()
+    data class Processing(val text: String = "") : ChatInputBarStatus()
+    data class Failed(val message: String) : ChatInputBarStatus()
+}
 
 @Composable
 fun ChatInputBar(
@@ -30,117 +55,138 @@ fun ChatInputBar(
     onSendClick: () -> Unit,
     onMicClick: () -> Unit,
     onAddClick: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    isParsing: Boolean = false,
+    status: ChatInputBarStatus = ChatInputBarStatus.Idle,
     placeholder: String = "Describe your expense...",
-    isListening: Boolean = false
 ) {
+    val colors = MaterialTheme.appColors
     val haptic = LocalHapticFeedback.current
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .shadow(12.dp, CircleShape)
-            .background(MaterialTheme.appColors.bgSurface2, CircleShape) // Dark pill background
-            .padding(4.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 8.dp, end = 8.dp)
-        ) {
-            // Plus Button
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.appColors.primary)
-                    .clickable { onAddClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Manually",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Text Input Field (Basic TextField for look)
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        color = MaterialTheme.appColors.textTertiary,
-                        fontSize = 14.sp
+    Box(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        PremiumPillShell(
+            leading = {
+                PillCircleButton(onClick = onAddClick, ring = colors.pillButtonRing) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Manually",
+                        tint = colors.pillButtonIcon,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
-                
-                androidx.compose.foundation.text.BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = MaterialTheme.appColors.textPrimary,
-                        fontSize = 14.sp
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.appColors.primary)
-                )
-            }
-
-            // Right blue circle: mic when idle/listening, send when typing
-            Spacer(modifier = Modifier.width(4.dp))
-            if (value.isNotEmpty() || isParsing) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.appColors.primary)
-                        .clickable { onSendClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isParsing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
+            },
+            content = {
+                when (status) {
+                    is ChatInputBarStatus.Idle -> {
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                            if (value.isEmpty()) {
+                                Text(text = placeholder, color = colors.textTertiary, style = AppTypography.bodyLarge)
+                            }
+                            BasicTextField(
+                                value = value,
+                                onValueChange = onValueChange,
+                                textStyle = TextStyle(color = colors.textPrimary, fontSize = AppTypography.bodyLarge.fontSize),
+                                modifier = Modifier.fillMaxWidth(),
+                                cursorBrush = SolidColor(colors.primary),
+                            )
+                        }
+                    }
+                    is ChatInputBarStatus.Listening -> PillWaveform(modifier = Modifier.weight(1f))
+                    is ChatInputBarStatus.Transcribing -> {
+                        Text(
+                            text = status.text.ifBlank { "Listening..." },
+                            color = colors.textPrimary,
+                            style = AppTypography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
                         )
-                    } else {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                    }
+                    is ChatInputBarStatus.Processing -> {
+                        Text(
+                            text = status.text.ifBlank { "Processing..." },
+                            color = colors.textSecondary,
+                            style = AppTypography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    is ChatInputBarStatus.Failed -> {
+                        Text(
+                            text = status.message,
+                            color = colors.error,
+                            style = AppTypography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isListening) MaterialTheme.appColors.expense
-                            else MaterialTheme.appColors.primary
-                        )
-                        .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onMicClick()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isListening) Icons.Default.Stop else Icons.Default.Mic,
-                        contentDescription = if (isListening) "Stop recording" else "Voice Input",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+            },
+            trailing = {
+                when {
+                    status is ChatInputBarStatus.Listening || status is ChatInputBarStatus.Transcribing -> {
+                        PillCircleButton(onClick = onMicClick, ring = colors.pillRecRing) {
+                            RecLightIndicator()
+                        }
+                    }
+                    status is ChatInputBarStatus.Processing -> {
+                        PillCircleButton(onClick = {}, ring = colors.pillButtonRing, enabled = false) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = colors.pillButtonIcon,
+                            )
+                        }
+                    }
+                    status is ChatInputBarStatus.Idle && value.isNotEmpty() -> {
+                        PillCircleButton(onClick = onSendClick, ring = colors.pillButtonRing) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = colors.pillButtonIcon,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                    else -> {
+                        PillCircleButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onMicClick()
+                            },
+                            ring = colors.pillButtonRing,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "Voice Input",
+                                tint = colors.pillButtonIcon,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
                 }
+            },
+        )
+
+        if (status !is ChatInputBarStatus.Idle) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-4).dp, y = (-4).dp)
+                    .size(22.dp)
+                    .background(colors.bgSurface, CircleShape)
+                    .border(1.dp, colors.borderMedium, CircleShape)
+                    .clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Dismiss",
+                    tint = colors.textTertiary,
+                    modifier = Modifier.size(14.dp),
+                )
             }
         }
     }

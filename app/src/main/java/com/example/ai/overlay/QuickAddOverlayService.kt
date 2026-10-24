@@ -23,6 +23,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.LedgerApplication
+import com.example.MainActivity
 import com.example.R
 import com.example.ai.model.TransactionSource
 import com.example.ai.state.FailureReason
@@ -117,6 +118,7 @@ class QuickAddOverlayService : Service() {
                         onMicClick = { onMicClick() },
                         onSubmit = { onSubmit() },
                         onDismiss = { teardown() },
+                        onAddClick = { openApp() },
                         status = statusState,
                         placeholder = getString(R.string.quick_add_pill_placeholder),
                     )
@@ -127,6 +129,14 @@ class QuickAddOverlayService : Service() {
         windowManager.addView(composeView, layoutParams)
         requestFocusForInput()
         QuickAddHaptics.onOpen(this)
+    }
+
+    private fun openApp() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+        teardown()
     }
 
     private fun requestFocusForInput() {

@@ -32,7 +32,6 @@ import com.example.ai.state.FailureReason
 import com.example.ai.stt.SttProvider
 import com.example.ai.stt.SttCallbacks
 import com.example.ai.stt.rememberRecordAudioPermissionState
-import com.example.ui.components.ai.AiTranscriptCard
 import com.example.ai.extract.CandidateResolver
 import com.example.ai.model.Direction
 import com.example.ai.model.ConfidenceScore
@@ -326,12 +325,7 @@ fun HomeDashboard(
                         }
                     )
                 }
-                is AiState.QueryProcessing -> {
-                    AiTranscriptCard(
-                        state = AiState.Extracting(state.transcript, com.example.ai.model.AiIntent.Query),
-                        onDismiss = { dismissAi() }
-                    )
-                }
+                is AiState.QueryProcessing -> Unit // shown inline in the pill below
                 is AiState.Failed -> {
                     when (state.reason) {
                         is com.example.ai.state.FailureReason.NoDataYet -> {
@@ -339,21 +333,25 @@ fun HomeDashboard(
                                 onDismiss = { dismissAi() }
                             )
                         }
-                        else -> {
-                            AiTranscriptCard(
-                                state = state,
-                                onDismiss = { dismissAi() }
-                            )
-                        }
+                        else -> Unit // shown inline in the pill below
                     }
                 }
-                else -> {
-                    // Show transcript card for all other active AI states.
-                    AiTranscriptCard(
-                        state = aiState,
-                        onDismiss = { dismissAi() }
-                    )
+                else -> Unit // Idle/Listening/Transcribing/etc. shown inline in the pill below
+            }
+
+            val chatInputStatus = when (val state = aiState) {
+                is AiState.Listening -> com.example.ui.components.inputs.ChatInputBarStatus.Listening
+                is AiState.Transcribing -> com.example.ui.components.inputs.ChatInputBarStatus.Transcribing(state.partialText)
+                is AiState.TranscriptReady -> com.example.ui.components.inputs.ChatInputBarStatus.Processing(state.transcript)
+                is AiState.IntentRouting -> com.example.ui.components.inputs.ChatInputBarStatus.Processing(state.transcript)
+                is AiState.Extracting -> com.example.ui.components.inputs.ChatInputBarStatus.Processing(state.transcript)
+                is AiState.QueryProcessing -> com.example.ui.components.inputs.ChatInputBarStatus.Processing(state.transcript)
+                is AiState.Failed -> if (state.reason is com.example.ai.state.FailureReason.NoDataYet) {
+                    com.example.ui.components.inputs.ChatInputBarStatus.Idle
+                } else {
+                    com.example.ui.components.inputs.ChatInputBarStatus.Failed(state.reason.userMessage)
                 }
+                else -> com.example.ui.components.inputs.ChatInputBarStatus.Idle
             }
 
             com.example.ui.components.inputs.ChatInputBar(
@@ -399,9 +397,9 @@ fun HomeDashboard(
                     prefillType = null
                     showTransactionSheet = true
                 },
+                onDismiss = { dismissAi() },
                 placeholder = stringResource(R.string.chat_input_placeholder_alt),
-                isListening = aiState is AiState.Listening || aiState is AiState.Transcribing ||
-                    (aiState is AiState.TranscriptReady && (aiState as AiState.TranscriptReady).transcript.isBlank())
+                status = chatInputStatus,
             )
         }
 

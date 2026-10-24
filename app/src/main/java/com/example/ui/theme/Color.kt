@@ -57,7 +57,20 @@ data class AppColors(
     val onboardingTrack: Color,
     val onboardingGhostBtn: Color,
     val onboardingGhostBtnBorder: Color,
-    val onboardingStatTile: Color
+    val onboardingStatTile: Color,
+
+    // Pearl Edge pill palette
+    val pillShellStart: Color,
+    val pillShellEnd: Color,
+    val pillBorder: Color,
+    val pillRing: Color,
+    val pillButtonStart: Color,
+    val pillButtonEnd: Color,
+    val pillButtonIcon: Color,
+    val pillButtonRing: Color,
+    val pillRecRing: Color,
+    val pillRecDot: Color,
+    val pillShadow: Color
 )
 
 val LightTokens = AppColors(
@@ -107,7 +120,19 @@ val LightTokens = AppColors(
     onboardingTrack = Color(0xFF15172A).copy(alpha = 0.10f),
     onboardingGhostBtn = Color(0xFF15172A).copy(alpha = 0.045f),
     onboardingGhostBtnBorder = Color(0xFF15172A).copy(alpha = 0.10f),
-    onboardingStatTile = Color(0xFF15172A).copy(alpha = 0.035f)
+    onboardingStatTile = Color(0xFF15172A).copy(alpha = 0.035f),
+
+    pillShellStart = Color(0xFFFFFFFF),
+    pillShellEnd = Color(0xFFF1F5FF),
+    pillBorder = Color(0xFFFFFFFF),
+    pillRing = Color(0xFFD8E2F8),
+    pillButtonStart = Color(0xFFFFFFFF),
+    pillButtonEnd = Color(0xFFFFFFFF),
+    pillButtonIcon = Color(0xFF3F70DF),
+    pillButtonRing = Color(0xFFCDDBF8),
+    pillRecRing = Color(0xFFEF9B9B),
+    pillRecDot = Color(0xFFFF4B4B),
+    pillShadow = Color(0xFF2B4682).copy(alpha = 0.14f)
 )
 
 val DarkTokens = AppColors(
@@ -157,7 +182,19 @@ val DarkTokens = AppColors(
     onboardingTrack = Color(0xFFE8EAF3).copy(alpha = 0.15f),
     onboardingGhostBtn = Color(0xFFFFFFFF).copy(alpha = 0.06f),
     onboardingGhostBtnBorder = Color(0xFFFFFFFF).copy(alpha = 0.10f),
-    onboardingStatTile = Color(0xFFFFFFFF).copy(alpha = 0.04f)
+    onboardingStatTile = Color(0xFFFFFFFF).copy(alpha = 0.04f),
+
+    pillShellStart = Color(0xFF172746),
+    pillShellEnd = Color(0xFF0D1930),
+    pillBorder = Color(0xFF294576),
+    pillRing = Color(0xFF35568E),
+    pillButtonStart = Color(0xFF1D3157),
+    pillButtonEnd = Color(0xFF142443),
+    pillButtonIcon = Color(0xFF82A8FF),
+    pillButtonRing = Color(0xFF4469AA),
+    pillRecRing = Color(0xFFB94747),
+    pillRecDot = Color(0xFFFF4B4B),
+    pillShadow = Color(0xFF020A1C).copy(alpha = 0.46f)
 )
 
 val LocalAppColors = staticCompositionLocalOf<AppColors> {
