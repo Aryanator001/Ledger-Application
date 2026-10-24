@@ -19,7 +19,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
+import com.example.ai.overlay.AssistantRoleHelper
+import com.example.ai.overlay.OverlayPermissionHelper
+import com.example.ai.overlay.QuickAddOverlayService
 import com.example.ui.components.settings.OptionPickerSheet
 import com.example.ui.theme.appColors
 import androidx.compose.material3.MaterialTheme
@@ -67,6 +74,21 @@ fun GeneralSettingsScreen(
 
     var pickerType by remember { mutableStateOf<PickerType?>(null) }
     var showClearCacheAlert by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    var hasOverlayPermission by remember { mutableStateOf(OverlayPermissionHelper.canDrawOverlays(context)) }
+    var isDefaultAssistant by remember { mutableStateOf(AssistantRoleHelper.isDefaultAssistant(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasOverlayPermission = OverlayPermissionHelper.canDrawOverlays(context)
+                isDefaultAssistant = AssistantRoleHelper.isDefaultAssistant(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(
         topBar = {
@@ -182,6 +204,40 @@ fun GeneralSettingsScreen(
                     labelColor = MaterialTheme.appColors.error,
                     showChevron = false,
                     onClick = { showClearCacheAlert = true }
+                )
+            }
+
+            SettingsSection(stringResource(R.string.quick_add_settings_section)) {
+                GeneralSettingsRow(
+                    label = stringResource(R.string.quick_add_settings_permission_label),
+                    value = if (hasOverlayPermission) {
+                        stringResource(R.string.quick_add_settings_permission_granted)
+                    } else {
+                        stringResource(R.string.quick_add_settings_permission_not_granted)
+                    },
+                    onClick = { context.startActivity(OverlayPermissionHelper.buildPermissionIntent(context)) }
+                )
+                GeneralSettingsRow(
+                    label = stringResource(R.string.quick_add_settings_try_label),
+                    showChevron = false,
+                    onClick = {
+                        if (hasOverlayPermission) {
+                            QuickAddOverlayService.start(context)
+                        } else {
+                            context.startActivity(OverlayPermissionHelper.buildPermissionIntent(context))
+                        }
+                    }
+                )
+                GeneralSettingsRow(
+                    label = stringResource(R.string.quick_add_assistant_role_label),
+                    value = if (isDefaultAssistant) {
+                        stringResource(R.string.quick_add_settings_permission_granted)
+                    } else {
+                        stringResource(R.string.quick_add_settings_permission_not_granted)
+                    },
+                    onClick = {
+                        AssistantRoleHelper.buildRequestRoleIntent(context)?.let { context.startActivity(it) }
+                    }
                 )
             }
 

@@ -63,6 +63,12 @@ class LedgerApplication : Application() {
         ) 
     }
     val analyticsService by lazy { com.example.data.AnalyticsService(repository, accountRepository, budgetRepository) }
+    val quickAddOrchestrator by lazy {
+        com.example.ai.overlay.QuickAddOrchestrator(
+            transactionRepository = repository,
+            userPreferences = userPreferences
+        )
+    }
 
     override fun onCreate() {
         super.onCreate()

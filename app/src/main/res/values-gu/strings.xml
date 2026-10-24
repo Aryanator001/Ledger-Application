@@ -6,6 +6,17 @@
     <string name="dashboard_auto_saved" formatted="false">ઓટો-સેવ થઈ ગયું ✓ %s ₹%d</string>
     <string name="dashboard_mic_permission">વોઇસ ઇनपुट माटे माइक्रोफोननी मंजूरी जरूरी छे</string>
     <string name="dashboard_transaction_saved">ટ્રાન્ઝेकशन सेव थई गयुं ✓</string>
+    <string name="quick_add_tile_label">ક્વિક ઍડ</string>
+    <string name="quick_add_shortcut_short_label">ક્વિક ઍડ</string>
+    <string name="quick_add_shortcut_long_label">ક્વિક ઍડ ટ્રાન્ઝેક્શન</string>
+    <string name="quick_add_pill_placeholder">લંચ પર ₹150 ખર્ચ્યા…</string>
+    <string name="quick_add_overlay_permission_rationale">Quick Add વાપરવા માટે Khata.ai ને બીજી ऍપ्स पर देखाવા ની मंजूरी आपो</string>
+    <string name="quick_add_settings_section">ક્વિક ઍડ</string>
+    <string name="quick_add_settings_permission_label">બીજી ऍપ्स पर देखाडो</string>
+    <string name="quick_add_settings_permission_granted">મંજૂરી આપી</string>
+    <string name="quick_add_settings_permission_not_granted">મંજૂરી નથી — ટैप करीने मंजूरी आपो</string>
+    <string name="quick_add_settings_try_label">अत्यारे Quick Add અજમાવો</string>
+    <string name="quick_add_assistant_role_label">ડિવાઇસ સહાયક તરીકે સેટ કરો</string>
     <string name="dashboard_include_amount">એક एमाउंट ઉमेरो (दा.त., \'500\')</string>
     <string name="chat_input_placeholder_alt">ખર્ચ ઉمेरो \'लंच 200\'...</string>
     <string name="ai_thinking">વिचारी रह्यो छुं...</string>
