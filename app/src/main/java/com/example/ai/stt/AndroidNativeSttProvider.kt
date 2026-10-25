@@ -8,6 +8,7 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import com.example.ai.state.FailureReason
 
 /**
@@ -31,6 +32,7 @@ class AndroidNativeSttProvider(private val context: Context) : SttProvider {
     private var callbacks: SttCallbacks? = null
     private var isListening = false
     private var lastRecognitionEndTime = 0L
+    private var sessionStartMs = 0L
     private val handler = Handler(Looper.getMainLooper())
     private var pendingStart: Runnable? = null
 
@@ -64,6 +66,7 @@ class AndroidNativeSttProvider(private val context: Context) : SttProvider {
             accumulatedText.clear()
             bestPartial = ""
             continuationCount = 0
+            sessionStartMs = System.currentTimeMillis()
         }
 
         val doStart = Runnable {
@@ -219,6 +222,8 @@ class AndroidNativeSttProvider(private val context: Context) : SttProvider {
                 return
             }
 
+            val totalMs = System.currentTimeMillis() - sessionStartMs
+            Log.d("AiPipelineTiming", "stt=androidNative total=${totalMs}ms result=error($error)")
             callbacks?.onError(mapErrorCode(error))
         }
 
@@ -332,9 +337,12 @@ class AndroidNativeSttProvider(private val context: Context) : SttProvider {
             try { recognizer?.cancel() } catch (_: Exception) {}
         }
 
+        val totalMs = System.currentTimeMillis() - sessionStartMs
         if (final.isNotBlank()) {
+            Log.d("AiPipelineTiming", "stt=androidNative total=${totalMs}ms result=ok")
             callbacks?.onFinal(final)
         } else {
+            Log.d("AiPipelineTiming", "stt=androidNative total=${totalMs}ms result=emptyTranscript")
             callbacks?.onError(FailureReason.EmptyTranscript)
         }
     }

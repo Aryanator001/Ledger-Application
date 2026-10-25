@@ -6,6 +6,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.example.BuildConfig
 import com.example.ai.state.FailureReason
 import kotlinx.coroutines.CoroutineScope
@@ -172,6 +173,7 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
             var silenceStartMs = 0L
 
             val recordStartMs = System.currentTimeMillis()
+            var speechEndMs = recordStartMs
             recorder.startRecording()
             activeRecorder.set(recorder)   // expose so stopInternals can unblock read()
             while (isRecording) {
@@ -215,6 +217,8 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                     }
                 }
             }
+            speechEndMs = System.currentTimeMillis()
+
             // CAS: if stopInternals already called stop() from main thread, skip it here
             // to avoid IllegalStateException on double-stop.
             if (activeRecorder.compareAndSet(recorder, null)) {
@@ -240,8 +244,13 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
 
             val pcm = pcmOut.toByteArray()
             val wav = buildWav(pcm)
+            val recordVadMs = speechEndMs - recordStartMs
+            // Speech duration = time between first RMS-above-threshold sample and the
+            // start of the trailing silence that triggered finalize. Short values here
+            // point at a too-brief/clipped utterance rather than a Sarvam-side failure.
+            val speechDurationMs = if (speechDetected && silenceStartMs > 0) silenceStartMs - speechStartMs else -1L
 
-            uploadJob = scope.launch { uploadToSarvam(wav, apiKey, mySession) }
+            uploadJob = scope.launch { uploadToSarvam(wav, apiKey, mySession, recordVadMs, speechDurationMs, pcm.size) }
         }.also { it.start() }
     }
 
@@ -298,11 +307,19 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
         return sqrt(sum / (n / 2)).toFloat()
     }
 
-    private fun uploadToSarvam(wav: ByteArray, apiKey: String, mySession: Int) {
+    private fun uploadToSarvam(
+        wav: ByteArray,
+        apiKey: String,
+        mySession: Int,
+        recordVadMs: Long,
+        speechDurationMs: Long,
+        pcmBytes: Int
+    ) {
         // Bail out immediately if this session has been superseded or cancelled.
         if (sessionId.get() != mySession || isCancelled) return
         val cb = callbacks ?: return
 
+        val uploadStartMs = System.currentTimeMillis()
         try {
             val body = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
@@ -321,10 +338,12 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
             activeCall = call
             val response = call.execute()
             activeCall = null
+            val uploadMs = System.currentTimeMillis() - uploadStartMs
 
             val responseBody = response.body?.string() ?: ""
 
             if (!response.isSuccessful) {
+                Log.d("AiPipelineTiming", "stt=sarvam recordVad=${recordVadMs}ms speech=${speechDurationMs}ms pcmBytes=$pcmBytes upload=${uploadMs}ms result=httpError(${response.code})")
                 val reason = if (response.code == 401 || response.code == 403)
                     FailureReason.Unknown("Sarvam auth error (${response.code})")
                 else
@@ -339,12 +358,19 @@ class SarvamSttProvider(private val context: Context) : SttProvider {
                 JSONObject(responseBody).optString("transcript", "").trim()
             } catch (_: Exception) { "" }
 
+            Log.d("AiPipelineTiming", "stt=sarvam recordVad=${recordVadMs}ms speech=${speechDurationMs}ms pcmBytes=$pcmBytes upload=${uploadMs}ms result=${if (transcript.isNotBlank()) "ok" else "emptyTranscript"}")
+            if (transcript.isBlank()) {
+                Log.d("AiPipelineTiming", "sarvam raw response on emptyTranscript: $responseBody")
+            }
+
             handler.post {
                 if (sessionId.get() != mySession || isCancelled) return@post
                 if (transcript.isNotBlank()) cb.onFinal(transcript)
                 else cb.onError(FailureReason.EmptyTranscript)
             }
         } catch (e: Exception) {
+            val uploadMs = System.currentTimeMillis() - uploadStartMs
+            Log.d("AiPipelineTiming", "stt=sarvam recordVad=${recordVadMs}ms speech=${speechDurationMs}ms pcmBytes=$pcmBytes upload=${uploadMs}ms result=exception(${e.message})")
             activeCall = null
             handler.post {
                 if (sessionId.get() == mySession && !isCancelled)

@@ -87,6 +87,7 @@ class GeminiTransactionExtractor : TransactionExtractor {
         normalizedTranscript: String,
         originalTranscript: String
     ): CandidateTransaction? = withContext(Dispatchers.IO) {
+        val extractStartMs = System.currentTimeMillis()
         try {
             val apiKey = com.example.BuildConfig.GEMINI_API_KEY
             if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
@@ -175,6 +176,8 @@ class GeminiTransactionExtractor : TransactionExtractor {
 
             val confidence = computeConfidence(amount, direction, entity, category, paymentMethod)
 
+            Log.d("AiPipelineTiming", "extract=${System.currentTimeMillis() - extractStartMs}ms result=ok")
+
             CandidateTransaction(
                 amount = amount,
                 direction = direction,
@@ -187,8 +190,10 @@ class GeminiTransactionExtractor : TransactionExtractor {
                 source = TransactionSource.VOICE
             )
         } catch (e: PartialExtractionException) {
+            Log.d("AiPipelineTiming", "extract=${System.currentTimeMillis() - extractStartMs}ms result=partial")
             throw e
         } catch (e: Exception) {
+            Log.d("AiPipelineTiming", "extract=${System.currentTimeMillis() - extractStartMs}ms result=exception(${e.message})")
             Log.e("GeminiExtract", "Extraction failed", e)
             throw e
         }

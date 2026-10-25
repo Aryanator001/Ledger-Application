@@ -1,5 +1,6 @@
 package com.example.ai
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ai.extract.CandidateResolver
@@ -105,16 +106,18 @@ class AiTransactionViewModel(
             return
         }
         _state.value = AiState.TranscriptReady(transcript)
-        routeIntent(transcript)
+        routeIntent(transcript, System.currentTimeMillis())
     }
 
-    private fun routeIntent(transcript: String) {
+    private fun routeIntent(transcript: String, transcriptReadyMs: Long) {
         _state.value = AiState.IntentRouting(transcript)
+        val classifyStartMs = System.currentTimeMillis()
         val result = intentClassifier.classify(transcript)
+        val classifyMs = System.currentTimeMillis() - classifyStartMs
         when (result.intent) {
             is AiIntent.Transaction -> {
                 _state.value = AiState.Extracting(transcript, result.intent, result.language)
-                extractTransaction(transcript)
+                extractTransaction(transcript, transcriptReadyMs, classifyMs)
             }
             is AiIntent.Query -> {
                 _state.value = AiState.QueryProcessing(transcript)
@@ -267,12 +270,15 @@ class AiTransactionViewModel(
         _state.value = AiState.Idle
     }
 
-    private fun extractTransaction(transcript: String) {
+    private fun extractTransaction(transcript: String, transcriptReadyMs: Long, classifyMs: Long) {
         viewModelScope.launch {
             val normalized = normalizer.normalize(transcript)
             try {
+                val extractStartMs = System.currentTimeMillis()
                 val rawCandidate = transactionExtractor.extract(normalized, transcript)
+                val extractMs = System.currentTimeMillis() - extractStartMs
                 if (rawCandidate == null) {
+                    Log.d("AiPipelineTiming", "classify=${classifyMs}ms extract=${extractMs}ms validate=0ms total=${System.currentTimeMillis() - transcriptReadyMs}ms result=noCandidate")
                     _state.value = AiState.Failed(FailureReason.ExtractionFailed("No candidate generated"), transcript)
                     return@launch
                 }
@@ -287,9 +293,14 @@ class AiTransactionViewModel(
                 }
 
                 val resolvedCategoryId = resolver.resolveCategoryId(candidate.categoryHint)
+                val validateStartMs = System.currentTimeMillis()
                 val fieldErrors = transactionValidator.validateFields(candidate)
                 val duplicateError = transactionValidator.checkDuplicate(candidate, resolvedCategoryId)
+                val validateMs = System.currentTimeMillis() - validateStartMs
                 val allErrors = fieldErrors + listOfNotNull(duplicateError)
+
+                val totalMs = System.currentTimeMillis() - transcriptReadyMs
+                Log.d("AiPipelineTiming", "classify=${classifyMs}ms extract=${extractMs}ms validate=${validateMs}ms total=${totalMs}ms result=ok")
 
                 if (allErrors.isEmpty()
                     && ConfidenceScore.tier(candidate.confidence.overall) == ConfidenceTier.HIGH
@@ -299,6 +310,7 @@ class AiTransactionViewModel(
                     _state.value = AiState.ConfirmationRequired(candidate, allErrors)
                 }
             } catch (e: PartialExtractionException) {
+                Log.d("AiPipelineTiming", "classify=${classifyMs}ms total=${System.currentTimeMillis() - transcriptReadyMs}ms result=partial")
                 val prefillType = when (e.direction) {
                     Direction.INCOME -> "INCOME"
                     Direction.CREDIT -> "CREDIT"
@@ -311,6 +323,7 @@ class AiTransactionViewModel(
                     rawTranscript = transcript
                 )
             } catch (e: Exception) {
+                Log.d("AiPipelineTiming", "classify=${classifyMs}ms total=${System.currentTimeMillis() - transcriptReadyMs}ms result=exception(${e.message})")
                 _state.value = AiState.Failed(FailureReason.ExtractionFailed(e.message), transcript)
             }
         }
