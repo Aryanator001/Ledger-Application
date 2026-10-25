@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ class UserPreferences(private val context: Context) {
         val ACTIVE_LEDGER_SCOPE_ID = stringPreferencesKey("active_ledger_scope_id")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
         val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
+        val LAST_BACKUP_AT = longPreferencesKey("last_backup_at")
     }
 
     val activeUserId: Flow<String?> = context.dataStore.data.map { it[ACTIVE_USER_ID] }
@@ -100,5 +102,11 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setHasSeenOnboarding(seen: Boolean) {
         context.dataStore.edit { it[HAS_SEEN_ONBOARDING] = seen }
+    }
+
+    val lastBackupAt: Flow<Long?> = context.dataStore.data.map { it[LAST_BACKUP_AT] }
+
+    suspend fun setLastBackupAt(value: Long) {
+        context.dataStore.edit { it[LAST_BACKUP_AT] = value }
     }
 }

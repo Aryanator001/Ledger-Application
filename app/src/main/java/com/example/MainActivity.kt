@@ -551,8 +551,11 @@ fun MainScreen(
                     )
                 }
                 composable(Route.BackupRestore.route) {
+                    val backupFactory = com.example.ui.backup.BackupRestoreViewModelFactory(app.backupManager, app.userPreferences)
+                    val backupViewModel: com.example.ui.backup.BackupRestoreViewModel = viewModel(factory = backupFactory)
                     BackupRestoreScreen(
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        viewModel = backupViewModel
                     )
                 }
                 composable(Route.Reminders.route) {

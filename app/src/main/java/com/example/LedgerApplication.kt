@@ -63,6 +63,15 @@ class LedgerApplication : Application() {
         ) 
     }
     val analyticsService by lazy { com.example.data.AnalyticsService(repository, accountRepository, budgetRepository) }
+    val backupManager by lazy {
+        com.example.data.backup.BackupManager(
+            context = this,
+            transactionRepository = repository,
+            accountRepository = accountRepository,
+            budgetRepository = budgetRepository,
+            userPreferences = userPreferences
+        )
+    }
     val quickAddOrchestrator by lazy {
         com.example.ai.overlay.QuickAddOrchestrator(
             transactionRepository = repository,

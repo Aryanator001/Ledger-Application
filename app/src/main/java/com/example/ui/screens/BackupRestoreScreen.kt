@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,34 +19,111 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
+import com.example.ui.backup.BackupRestoreViewModel
+import com.example.ui.backup.BackupUiState
+import com.example.data.backup.BackupError
 import com.example.ui.theme.appColors
 import com.example.ui.theme.AppShapes
 import com.example.ui.theme.AppTypography
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackupRestoreScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: BackupRestoreViewModel
 ) {
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showClearDataDialog by remember { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingImportCsvUri by remember { mutableStateOf<Uri?>(null) }
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
+    val isLoading = uiState is BackupUiState.Loading
 
     // Pre-compute snackbar strings for use inside lambdas
-    val jsonExportMsg = stringResource(R.string.backup_restore_exporting_json_msg)
-    val csvExportMsg = stringResource(R.string.backup_restore_exporting_csv_msg)
     val requiresProMsg = stringResource(R.string.backup_restore_requires_pro_msg)
-    val selectingFileMsg = stringResource(R.string.backup_restore_selecting_file_msg)
-    val selectingCsvMsg = stringResource(R.string.backup_restore_selecting_csv_msg)
     val dataDeletedMsg = stringResource(R.string.backup_restore_deleted_msg)
+    val exportSuccessMsg = stringResource(R.string.backup_restore_export_success_msg)
+    val restoreSuccessMsg = stringResource(R.string.backup_restore_restore_success_msg)
+    val exportCsvSuccessMsg = stringResource(R.string.backup_restore_export_csv_success_msg)
+    val importCsvSuccessMsg = stringResource(R.string.backup_restore_import_csv_success_msg)
+    val ioErrorMsg = stringResource(R.string.backup_restore_io_error_msg)
+    val invalidFileMsg = stringResource(R.string.backup_restore_invalid_file_msg)
+    val unsupportedVersionMsg = stringResource(R.string.backup_restore_unsupported_version_msg)
+    val noActiveLedgerMsg = stringResource(R.string.backup_restore_no_active_ledger_msg)
+    val malformedCsvMsg = stringResource(R.string.backup_restore_malformed_csv_msg)
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        android.util.Log.d("BackupRestoreScreen", "CreateDocument result: $uri")
+        uri?.let { viewModel.exportBackup(it) }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        android.util.Log.d("BackupRestoreScreen", "OpenDocument result: $uri")
+        uri?.let { pendingRestoreUri = it }
+    }
+
+    val exportCsvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        android.util.Log.d("BackupRestoreScreen", "CreateDocument(csv) result: $uri")
+        uri?.let { viewModel.exportCsv(it) }
+    }
+
+    val importCsvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        android.util.Log.d("BackupRestoreScreen", "OpenDocument(csv) result: $uri")
+        uri?.let { pendingImportCsvUri = it }
+    }
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is BackupUiState.ExportSuccess -> {
+                snackbarHostState.showSnackbar(exportSuccessMsg)
+                viewModel.consumeUiState()
+            }
+            is BackupUiState.RestoreSuccess -> {
+                snackbarHostState.showSnackbar(restoreSuccessMsg)
+                viewModel.consumeUiState()
+            }
+            is BackupUiState.ExportCsvSuccess -> {
+                snackbarHostState.showSnackbar(exportCsvSuccessMsg)
+                viewModel.consumeUiState()
+            }
+            is BackupUiState.ImportCsvSuccess -> {
+                snackbarHostState.showSnackbar(importCsvSuccessMsg)
+                viewModel.consumeUiState()
+            }
+            is BackupUiState.Error -> {
+                val msg = when (state.error) {
+                    BackupError.IO_ERROR -> ioErrorMsg
+                    BackupError.MALFORMED_JSON -> invalidFileMsg
+                    BackupError.UNSUPPORTED_SCHEMA_VERSION -> unsupportedVersionMsg
+                    BackupError.NO_ACTIVE_LEDGER_SCOPE -> noActiveLedgerMsg
+                    BackupError.MALFORMED_CSV -> malformedCsvMsg
+                }
+                snackbarHostState.showSnackbar(msg)
+                viewModel.consumeUiState()
+            }
+            else -> Unit
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -88,10 +168,9 @@ fun BackupRestoreScreen(
                         icon = Icons.Default.Save,
                         title = stringResource(R.string.backup_restore_export_all_title),
                         subtitle = stringResource(R.string.backup_restore_export_all_sub),
+                        enabled = !isLoading,
                         onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(jsonExportMsg)
-                            }
+                            exportLauncher.launch("ledger_backup_${System.currentTimeMillis()}.json")
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
@@ -100,10 +179,9 @@ fun BackupRestoreScreen(
                         icon = Icons.Default.Description,
                         title = stringResource(R.string.backup_restore_export_csv_title),
                         subtitle = stringResource(R.string.backup_restore_export_csv_sub),
+                        enabled = !isLoading,
                         onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(csvExportMsg)
-                            }
+                            exportCsvLauncher.launch("ledger_transactions_${System.currentTimeMillis()}.csv")
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
@@ -111,7 +189,9 @@ fun BackupRestoreScreen(
                     BackupRestoreItem(
                         icon = Icons.Default.Update,
                         title = stringResource(R.string.backup_restore_last_backup_title),
-                        subtitle = stringResource(R.string.backup_restore_never),
+                        subtitle = lastBackupAt?.let {
+                            SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(java.util.Date(it))
+                        } ?: stringResource(R.string.backup_restore_never),
                         showDisclosure = false,
                         onClick = {}
                     )
@@ -160,10 +240,9 @@ fun BackupRestoreScreen(
                         icon = Icons.Default.SettingsBackupRestore,
                         title = stringResource(R.string.backup_restore_restore_backup_title),
                         subtitle = stringResource(R.string.backup_restore_restore_backup_sub),
+                        enabled = !isLoading,
                         onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(selectingFileMsg)
-                            }
+                            restoreLauncher.launch(arrayOf("*/*"))
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.appColors.borderLight)
@@ -172,10 +251,9 @@ fun BackupRestoreScreen(
                         icon = Icons.Default.FileUpload,
                         title = stringResource(R.string.backup_restore_import_csv_title),
                         subtitle = stringResource(R.string.backup_restore_import_csv_sub),
+                        enabled = !isLoading,
                         onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(selectingCsvMsg)
-                            }
+                            importCsvLauncher.launch(arrayOf("*/*"))
                         }
                     )
                 }
@@ -204,6 +282,68 @@ fun BackupRestoreScreen(
                 }
             }
         }
+    }
+
+    pendingRestoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingRestoreUri = null },
+            title = { Text(stringResource(R.string.backup_restore_restore_confirm_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
+            text = {
+                Text(
+                    text = stringResource(R.string.backup_restore_restore_confirm_msg),
+                    style = AppTypography.bodyRegular,
+                    color = MaterialTheme.appColors.textSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.restoreBackup(uri)
+                        pendingRestoreUri = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
+                ) {
+                    Text(stringResource(R.string.backup_restore_restore_confirm_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestoreUri = null }) {
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.appColors.textPrimary)
+                }
+            },
+            containerColor = MaterialTheme.appColors.bgSurface
+        )
+    }
+
+    pendingImportCsvUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingImportCsvUri = null },
+            title = { Text(stringResource(R.string.backup_restore_import_csv_confirm_title), style = AppTypography.display.copy(fontSize = 20.sp)) },
+            text = {
+                Text(
+                    text = stringResource(R.string.backup_restore_import_csv_confirm_msg),
+                    style = AppTypography.bodyRegular,
+                    color = MaterialTheme.appColors.textSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.importCsv(uri)
+                        pendingImportCsvUri = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.primary)
+                ) {
+                    Text(stringResource(R.string.backup_restore_import_csv_confirm_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingImportCsvUri = null }) {
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.appColors.textPrimary)
+                }
+            },
+            containerColor = MaterialTheme.appColors.bgSurface
+        )
     }
 
     if (showClearDataDialog) {
@@ -277,13 +417,14 @@ fun BackupRestoreItem(
     badge: String? = null,
     onClick: () -> Unit,
     showDisclosure: Boolean = true,
+    enabled: Boolean = true,
     iconColor: Color = MaterialTheme.appColors.primary,
     titleColor: Color = MaterialTheme.appColors.textPrimary
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
