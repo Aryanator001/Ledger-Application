@@ -27,5 +27,5 @@ local.properties
 app/release/
 
 # Temporary / Data filesgit
-
+*.md
 cl
